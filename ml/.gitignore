@@ -1,0 +1,101 @@
+# =========================================================
+# MAARG ML GITIGNORE
+# =========================================================
+
+# Python virtual environment
+.venv/
+
+# -------------------------
+# Raw datasets
+# -------------------------
+data/raw/
+
+# -------------------------
+# Intermediate datasets
+# -------------------------
+data/interim/
+
+# -------------------------
+# Processed datasets
+# -------------------------
+data/processed/
+
+# -------------------------
+# Generated feature tables
+# -------------------------
+data/features/
+
+# -------------------------
+# Trained models
+# -------------------------
+models/*
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.keras
+*.safetensors
+
+# -------------------------
+# Scientific / geospatial data
+# -------------------------
+*.tif
+*.tiff
+*.geotiff
+*.img
+*.vrt
+*.nc
+*.nc4
+*.cdf
+*.hdf
+*.hdf4
+*.hdf5
+*.grib
+*.grib2
+
+# -------------------------
+# Large archives
+# -------------------------
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# -------------------------
+# Large tabular datasets
+# -------------------------
+*.csv
+*.parquet
+*.feather
+*.arrow
+
+# -------------------------
+# ML experiments
+# -------------------------
+runs/
+experiments/
+checkpoints/
+
+# -------------------------
+# Generated output
+# -------------------------
+outputs/
+artifacts/
+reports/generated/
+
+# -------------------------
+# Allow tiny committed fixtures
+# -------------------------
+!data/samples/
+!data/samples/**
+
+!data/samples/*.csv
+!data/samples/*.parquet
+!data/samples/*.json
+!data/samples/*.geojson
