@@ -1,0 +1,19 @@
+{
+  "origin": {
+    "lat": 26.1445,
+    "lon": 91.7362
+  },
+  "destination": {
+    "lat": 25.5788,
+    "lon": 91.8933
+  },
+  "profile": "driving",
+  "speedTypes": "optimal",
+  "date_time": {
+    "type": 0,
+    "value": ""
+  },
+  "alternatives": 2,
+  "avoid_locations": [],
+  "avoid_polygons": []
+}
