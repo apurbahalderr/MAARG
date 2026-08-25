@@ -1,0 +1,14 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Data and Models
+data/raw/
+data/processed/
+models/*.pkl
+models/*.xgb
+
+# Logs
+*.log
