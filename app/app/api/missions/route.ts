@@ -6,6 +6,7 @@ import { z } from "zod";
 import { connectDB } from "@/lib/connectDB";
 import { Mission } from "@/models/mission";
 import { verifyJWT } from "@/utils/verifyJWT";
+import generateID from "@/utils/generateID";
 
 const createMissionSchema = z.object({
   truckNo: z.string().trim().min(1, "Truck number is required"),
@@ -51,8 +52,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const missionId = generateID("M")
+
     await connectDB();
-    const mission = await Mission.create(parsed.data);
+    const mission = await Mission.create({ ...parsed.data, missionId });
 
     return NextResponse.json(
       { success: true, message: "Mission created successfully", mission },
