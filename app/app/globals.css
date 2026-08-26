@@ -1,26 +1,178 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* =========================================================
+   MAARG — Government Official (UX4G) design tokens
+  Consumed by Tailwind v4 as bg-, text-, and border- utilities.
+========================================================= */
+@theme {
+  /* Brand / structure */
+  --color-ink: #0b1f38;        /* deepest navy — display headings */
+  --color-navy: #0f2747;       /* brand navy — header band, primary surfaces */
+  --color-navy-600: #1a3a60;
+  --color-navy-800: #0a1c33;
+
+  /* Interactive official blue */
+  --color-primary: #124c8c;
+  --color-primary-600: #0f4179;
+  --color-primary-700: #0c3563;
+
+  /* National accents (used with restraint) */
+  --color-saffron: #ff6b1f;
+  --color-saffron-600: #ea5c12;
+  --color-india: #0f7a43;      /* India green */
+  --color-india-600: #0c6838;
+
+  /* Surfaces & lines */
+  --color-surface: #ffffff;
+  --color-canvas: #f3f6fb;     /* page background */
+  --color-wash: #eaf0f7;       /* inset panels */
+  --color-line: #dbe3ee;       /* default borders */
+  --color-line-strong: #c4d0e0;
+  --color-muted: #55647a;      /* secondary text */
+  --color-subtle: #7a8798;     /* tertiary text */
+
+  /* Risk / status system */
+  --color-safe: #157a3d;
+  --color-safe-bg: #e7f4ec;
+  --color-safe-line: #b7dcc2;
+  --color-warning: #b45309;
+  --color-warning-bg: #fbf1e0;
+  --color-warning-line: #f2d6a5;
+  --color-danger: #c1121f;
+  --color-danger-bg: #fceaec;
+  --color-danger-line: #f1bec3;
+
+  /* Radii */
+  --radius-card: 14px;
+
+  /* Fonts (variables set by next/font in layout.tsx) */
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* =========================================================
+   BASE
+========================================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  color: var(--color-ink);
+}
+
+/* Numeric / coordinate readouts */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* =========================================================
+   ACCESSIBILITY — visible keyboard focus (gov requirement)
+========================================================= */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  z-index: 100;
+  background: var(--color-navy);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 0 0 8px 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* =========================================================
+   SIGNATURE — national tricolour hairline
+========================================================= */
+.tricolor-strip {
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    var(--color-saffron) 0 33.33%,
+    #ffffff 33.33% 66.66%,
+    var(--color-india) 66.66% 100%
+  );
+}
+
+.tricolor-rail {
+  background: linear-gradient(
+    to bottom,
+    var(--color-saffron) 0 33.33%,
+    #ffffff 33.33% 66.66%,
+    var(--color-india) 66.66% 100%
+  );
+}
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+@keyframes maarg-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-safe) 45%, transparent); }
+  70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--color-safe) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-safe) 0%, transparent); }
+}
+.animate-live {
+  animation: maarg-pulse 2s infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
 }
