@@ -1,0 +1,48 @@
+{
+  "source": "mock",
+  "trip": {
+    "summary": {
+      "length": 103420,
+      "time": 11200,
+      "base_time": 11100
+    },
+    "pts": "gnvzp@ogc~mDowHowHow...",
+    "legs": [
+      {
+        "steps": []
+      }
+    ]
+  },
+  "alternates": [
+    {
+      "trip": {
+        "summary": {
+          "length": 105420,
+          "time": 11700,
+          "base_time": 11600
+        },
+        "pts": "g_j{p@oxv~mDowHowHow...",
+        "legs": [
+          {
+            "steps": []
+          }
+        ]
+      }
+    },
+    {
+      "trip": {
+        "summary": {
+          "length": 107420,
+          "time": 12200,
+          "base_time": 12100
+        },
+        "pts": "gp}{p@oij_nDowHowHow...",
+        "legs": [
+          {
+            "steps": []
+          }
+        ]
+      }
+    }
+  ]
+}

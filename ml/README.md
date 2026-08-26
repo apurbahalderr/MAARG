@@ -1,7 +1,25 @@
-# MAARG — ML Service (CV / NLP / News)
+# MAARG — ML Service (CV / NLP / News + Predictive Models)
 
 Standalone **FastAPI microservice** for incident verification and multilingual alerting.
 It runs independently on **port 8001** — the main backend (port 8000) talks to it via simple HTTP calls. No shared code, no shared database.
+
+## Components
+
+- Disaster / disruption prediction (Model 1)
+- Dynamic ETA prediction (Model 2)
+- CV incident verification / NLP parsing / multilingual alerts
+- Supply-chain forecasting
+
+## Data pipeline
+
+Raw Data
+→ Cleaning
+→ Spatial/Temporal Alignment
+→ Feature Engineering
+→ Training Dataset
+→ Model Training
+→ Evaluation
+→ FastAPI Inference
 
 ## Architecture
 
@@ -32,6 +50,9 @@ Backend (Anshu) :8000  --->  ML Service :8001
 | Translator | `src/nlp/translator.py` | GoogleTranslator first, Gemini fallback, static text as last resort |
 | News Feed | `src/news/rss_fetcher.py` | Google News RSS for disasters in Assam / Meghalaya / Sikkim |
 | Live Bridge | `src/live/live_bridge.py` | (stub) pushes verified incident coords to backend rerouting API |
+| Disruption Risk | `src/model1_disruption_risk/route_risk.py` | Route disruption risk prediction (Model 1) |
+| Route ETA | `src/model2_eta/route_eta.py` | Dynamic ETA prediction (Model 2) |
+| Route Pipeline | `src/route_pipeline/` | Mappls adapter, geometry, synthetic features |
 
 ## Setup & Run
 
@@ -110,6 +131,11 @@ Rules for consumers:
 
 Tags: `LANDSLIDE | FLOOD | WEATHER | GENERAL`.
 
+### 3. Predictive models
+
+- `POST /risk/predict` — route disruption risk (Model 1)
+- `POST /eta/predict` — dynamic ETA (Model 2)
+
 ## Quick test (with real images)
 
 ```powershell
@@ -130,3 +156,9 @@ Verified test results:
 - Severity enum everywhere: `CRITICAL | HIGH | MODERATE | LOW`.
 - Cause enums: `LANDSLIDE | FLOOD | INFRASTRUCTURE_DAMAGE | BLOCKAGE | DAMAGED_BRIDGE | FALLEN_TREE | CLEAR_ROAD | IRRELEVANT | UNKNOWN`.
 - Never commit `.env`. Rotate any key that gets exposed.
+
+## Local Environment
+
+Python virtual environment:
+
+ml/.venv

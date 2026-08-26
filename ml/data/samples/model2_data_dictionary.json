@@ -1,0 +1,236 @@
+[
+  {
+    "field": "timestamp",
+    "type": "datetime",
+    "unit": "",
+    "meaning": "Observation time",
+    "source_synthetic": "Generated chronologically",
+    "source_real": "Vehicle telemetry",
+    "category": "metadata"
+  },
+  {
+    "field": "route_id",
+    "type": "string",
+    "unit": "",
+    "meaning": "Candidate route ID",
+    "source_synthetic": "Generated",
+    "source_real": "Mappls/MAARG",
+    "category": "metadata"
+  },
+  {
+    "field": "segment_id",
+    "type": "string",
+    "unit": "",
+    "meaning": "Analytical segment ID",
+    "source_synthetic": "Generated",
+    "source_real": "MAARG segmentation",
+    "category": "metadata"
+  },
+  {
+    "field": "actual_segment_travel_time_minutes",
+    "type": "float",
+    "unit": "minutes",
+    "meaning": "Ground truth traversal time",
+    "source_synthetic": "Generated with noise",
+    "source_real": "Vehicle telemetry",
+    "category": "ground_truth"
+  },
+  {
+    "field": "actual_delay_minutes",
+    "type": "float",
+    "unit": "minutes",
+    "meaning": "Target variable (actual - baseline)",
+    "source_synthetic": "Derived",
+    "source_real": "Derived",
+    "category": "target"
+  },
+  {
+    "field": "segment_distance_km",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature segment_distance_km",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "mappls_baseline_eta_minutes",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature mappls_baseline_eta_minutes",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "mappls_baseline_speed_kmph",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature mappls_baseline_speed_kmph",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "disruption_risk",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature disruption_risk",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "active_incident_count_1km",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature active_incident_count_1km",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "active_incident_severity_score",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature active_incident_severity_score",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "rain_1h",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature rain_1h",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "rain_6h",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature rain_6h",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "rain_24h",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature rain_24h",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "soil_moisture_surface",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature soil_moisture_surface",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "soil_moisture_delta_24h",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature soil_moisture_delta_24h",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "slope_mean",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature slope_mean",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "slope_max",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature slope_max",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "hour_of_day",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature hour_of_day",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "day_of_week",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature day_of_week",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "month",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature month",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "historical_mean_travel_time_minutes",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature historical_mean_travel_time_minutes",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "historical_median_travel_time_minutes",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature historical_median_travel_time_minutes",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "recent_travel_time_15m",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature recent_travel_time_15m",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "recent_travel_time_30m",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature recent_travel_time_30m",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  },
+  {
+    "field": "recent_travel_time_60m",
+    "type": "float",
+    "unit": "mixed",
+    "meaning": "Feature recent_travel_time_60m",
+    "source_synthetic": "Generated",
+    "source_real": "Various (Mappls, IMERG, etc.)",
+    "category": "feature"
+  }
+]

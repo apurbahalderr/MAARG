@@ -6,14 +6,17 @@ import uvicorn
 # Allow running this file directly (python src/api/incident_router.py)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, APIRouter, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 
 from src.cv.verify import verify_incident_image_and_text
 from src.nlp.parser import parse_incident_text
 from src.nlp.translator import generate_multilingual_alert
 from src.news.rss_fetcher import fetch_ner_disaster_news
+from src.model1_disruption_risk.route_risk import predict_route_risk
+from src.model2_eta.route_eta import predict_route_eta
 
 app = FastAPI(title="MAARG CV/NLP/News Service")
 
@@ -25,6 +28,47 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ---------------------------------------------------------------------------
+# Predictive models router (swarnim): disruption risk + ETA
+# ---------------------------------------------------------------------------
+
+router = APIRouter()
+
+class RouteRequest(BaseModel):
+    routes: List[Dict[str, Any]]
+
+class ETARequest(BaseModel):
+    timestamp: str
+    routes: List[Dict[str, Any]]
+
+@router.post("/risk/predict")
+async def risk_predict(request: RouteRequest):
+    try:
+        results = []
+        for route_data in request.routes:
+            res = predict_route_risk(route_data)
+            results.append(res)
+        return {"routes": results}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/eta/predict")
+async def eta_predict(request: ETARequest):
+    try:
+        results = []
+        for route_data in request.routes:
+            res = predict_route_eta(route_data, request.timestamp)
+            results.append(res)
+        return {"routes": results}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+app.include_router(router)
+
+# ---------------------------------------------------------------------------
+# Incident verification (ayush): CV + NLP + multilingual alerts
+# ---------------------------------------------------------------------------
 
 @app.post("/api/v1/incidents/report")
 def report_incident(
