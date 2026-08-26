@@ -1,0 +1,12 @@
+google-genai
+pillow
+transformers
+torch
+feedparser
+fastapi
+uvicorn
+python-dotenv
+pydantic
+deep_translator
+requests
+python-multipart
