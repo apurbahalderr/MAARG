@@ -1,10 +1,10 @@
 import json
 import sys
-from src.live.mappls_adapter import build_mappls_request, fetch_mappls_route, normalize_mappls_response
-from src.live.geometry import decode_polyline, haversine_km, segment_route
-from src.live.synthetic_features import generate_synthetic_features
-from src.live.route_risk import predict_route_risk
-from src.live.route_eta import predict_route_eta
+from src.route_pipeline.mappls_adapter import build_mappls_request, fetch_mappls_route, normalize_mappls_response
+from src.route_pipeline.geometry import decode_polyline, haversine_km, segment_route
+from src.route_pipeline.synthetic_features import generate_synthetic_features
+from src.model1_disruption_risk.route_risk import predict_route_risk
+from src.model2_eta.route_eta import predict_route_eta
 
 def run_integration():
     print("--- RUNNING FULL LOCAL INTEGRATION TEST ---\n")

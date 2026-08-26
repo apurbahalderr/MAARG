@@ -1,7 +1,7 @@
 import pytest
-from src.live.mappls_adapter import build_mappls_request, fetch_mappls_route, normalize_mappls_response
-from src.live.geometry import segment_route, decode_polyline, haversine_km
-from src.live.synthetic_features import generate_synthetic_features
+from src.route_pipeline.mappls_adapter import build_mappls_request, fetch_mappls_route, normalize_mappls_response
+from src.route_pipeline.geometry import segment_route, decode_polyline, haversine_km
+from src.route_pipeline.synthetic_features import generate_synthetic_features
 
 def test_1_internal_json_validation():
     req = {

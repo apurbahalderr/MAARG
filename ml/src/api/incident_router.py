@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
-from src.live.route_risk import predict_route_risk
-from src.live.route_eta import predict_route_eta
+from src.model1_disruption_risk.route_risk import predict_route_risk
+from src.model2_eta.route_eta import predict_route_eta
 
 router = APIRouter()
 

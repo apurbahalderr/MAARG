@@ -1,5 +1,5 @@
-from src.live.route_eta import predict_route_eta
-from src.live.synthetic_features import generate_synthetic_features
+from src.model2_eta.route_eta import predict_route_eta
+from src.route_pipeline.synthetic_features import generate_synthetic_features
 
 def test_eta_schema_and_calculation():
     segment = {"segment_index": 0, "distance_km": 1.5, "duration_seconds": 180}

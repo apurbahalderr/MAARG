@@ -1,6 +1,6 @@
 import os
-from src.live.mappls_adapter import build_mappls_request, fetch_mappls_route, normalize_mappls_response
-from src.live.geometry import segment_route, decode_polyline, haversine_km
+from src.route_pipeline.mappls_adapter import build_mappls_request, fetch_mappls_route, normalize_mappls_response
+from src.route_pipeline.geometry import segment_route, decode_polyline, haversine_km
 
 def test_mappls_request_builder():
     req = {

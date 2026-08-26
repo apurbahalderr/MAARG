@@ -1,10 +1,10 @@
 import os
 import json
 
-from src.live.mappls_adapter import build_mappls_request, fetch_mappls_route, normalize_mappls_response
-from src.live.geometry import decode_polyline, segment_route
-from src.live.synthetic_features import generate_synthetic_features
-from src.live.route_risk import predict_route_risk
+from src.route_pipeline.mappls_adapter import build_mappls_request, fetch_mappls_route, normalize_mappls_response
+from src.route_pipeline.geometry import decode_polyline, segment_route
+from src.route_pipeline.synthetic_features import generate_synthetic_features
+from src.model1_disruption_risk.route_risk import predict_route_risk
 
 def run_local_pipeline():
     mappls_mode = os.getenv("MAPPLS_MODE", "mock")
