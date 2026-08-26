@@ -9,10 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.9.3",
     "next": "16.3.2",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "ux4g-web-components": "^1.0.13"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
