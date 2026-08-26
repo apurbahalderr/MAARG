@@ -27,9 +27,14 @@ data/features/
 
 # -------------------------
 # Trained models
+# Small runtime artifacts required by the API are committed.
+# Anything large/new should stay ignored unless explicitly allowed.
 # -------------------------
 models/*
 *.pkl
+!models/disruption_xgb.pkl
+!models/eta_xgb_v1.pkl
+!models/disruption_lr_baseline.pkl
 *.pickle
 *.joblib
 *.onnx
@@ -94,8 +99,14 @@ reports/generated/
 # -------------------------
 !data/samples/
 !data/samples/**
-
 !data/samples/*.csv
 !data/samples/*.parquet
 !data/samples/*.json
 !data/samples/*.geojson
+
+# -------------------------
+# Large regenerable training datasets (rebuild via train_eta_model.py)
+# Do NOT push these to GitHub.
+# -------------------------
+data/samples/model2_eta_training.csv
+data/samples/disruption_training.csv
