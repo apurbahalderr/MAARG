@@ -1,4 +1,4 @@
-export default function generateID(purpose: string) {
+export default function generateID(prefix: string) {
   const now = new Date();
 
   const year = now.getFullYear();
@@ -9,5 +9,5 @@ export default function generateID(purpose: string) {
   const seconds = String(now.getSeconds()).padStart(2, "0");
   const milliseconds = String(now.getMilliseconds()).padStart(3, "0");
 
-  return `${purpose.toUpperCase()}-${year}-${month}-${day}-${hours}-${minutes}-${seconds}-${milliseconds}`; // for incidents
+  return `${prefix.toUpperCase()}-${year}-${month}-${day}-${hours}-${minutes}-${seconds}-${milliseconds}`;
 }
