@@ -21,6 +21,7 @@ const registerSchema = z
       .object({
         licenseNumber: z.string().min(1),
         licenseExpiry: z.coerce.date(),
+        truckNo: z.string().trim().min(1, "Truck number is required"),
         status: z.enum(["available", "on_mission", "off_duty"]).optional(),
         vehicleType: z.enum(["truck", "van", "other"]).optional(),
       })
@@ -92,6 +93,13 @@ export async function POST(req: NextRequest) {
           : ["user"];
 
     const normalizedRoles = Array.from(new Set(roleValues));
+
+    if (normalizedRoles.includes("driver") && !driverProfile) {
+      return NextResponse.json(
+        { message: "Driver profile with a truck number is required for driver accounts" },
+        { status: 400 }
+      );
+    }
 
     const existingUser = await User.findOne({
       $or: [{ email: email.toLowerCase() }, { phone }],
