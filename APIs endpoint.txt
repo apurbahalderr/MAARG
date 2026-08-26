@@ -1,0 +1,4 @@
+- every endpoint starts with /api
+
+/missions
+POST - admins create a new mission for supply transport
