@@ -1,5 +1,3 @@
-
-
 import { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -8,6 +6,37 @@ import { Mission } from "@/models/mission";
 import { verifyJWT } from "@/utils/verifyJWT";
 import generateID from "@/utils/generateID";
 import { User } from "@/models/user";
+
+// GET /api/missions — admin lists all missions (optional ?status=PENDING|IN_PROGRESS|COMPLETED|CANCELLED)
+export async function GET(req: NextRequest) {
+  try {
+    const tokenPayload = verifyJWT(req);
+    if (!tokenPayload) {
+      return NextResponse.json({ success: false, message: "Authentication required" }, { status: 401 });
+    }
+    if (!tokenPayload.roles.includes("admin")) {
+      return NextResponse.json({ success: false, message: "Only admins can list all missions" }, { status: 403 });
+    }
+
+    await connectDB();
+
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status");
+    const filter = status ? { status } : {};
+
+    const missions = await Mission.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return NextResponse.json({ success: true, missions });
+  } catch (error) {
+    console.error("List missions error:", error);
+    return NextResponse.json(
+      { success: false, message: "Something went wrong while fetching missions" },
+      { status: 500 }
+    );
+  }
+}
 
 const createMissionSchema = z.object({
   truckNo: z.string().trim().min(1, "Truck number is required"),

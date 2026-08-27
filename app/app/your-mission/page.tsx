@@ -4,61 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import MapPlaceholder from "@/components/MapPlaceholder";
-import RouteModal, { type RouteModalData } from "@/components/RouteModal";
 import Icon from "@/components/Icon";
+import dynamic from "next/dynamic";
 
-const ROUTES_DATA: Record<string, RouteModalData> = {
-  route1: {
-    id: "route-1",
-    routeName: "Route 1 (Bhalukpong – Dirang – Tawang)",
-    status: "safe",
-    riskProbability: "18%",
-    eta: "8h 05m",
-    distance: "448 km",
-    isRecommended: true,
-    recommendationReason: "Lowest predicted disruption probability based on rainfall forecasts.",
-    riskReasons: [
-      "Optimal terrain slope gradient along the Bhalukpong highway",
-      "Clear road surface with no active landslide warnings",
-      "Stable weather window predicted for the next 12 hours",
-    ],
-    recentIncidents: [{ title: "Minor road clearance completed", time: "3 days ago" }],
-    expectedRecovery: "Fully operational · no delay expected",
-  },
-  route2: {
-    id: "route-2",
-    routeName: "Route 2 (Orang – Kalaktang Corridor)",
-    status: "medium",
-    riskProbability: "46%",
-    eta: "7h 20m",
-    distance: "412 km",
-    isRecommended: false,
-    recommendationReason: "Shorter distance but subject to moderate weather risk.",
-    riskReasons: [
-      "Moderate rainfall expected in mountain passes within 4 hours",
-      "Narrow hill section near Kalaktang prone to mudslides",
-    ],
-    recentIncidents: [{ title: "Single-lane traffic bottleneck", time: "12 hours ago" }],
-    expectedRecovery: "Approximately 6–8 hours to clear bottleneck",
-  },
-  route3: {
-    id: "route-3",
-    routeName: "Route 3 (Udalguri Direct Pass)",
-    status: "high",
-    riskProbability: "82%",
-    eta: "6h 40m",
-    distance: "385 km",
-    isRecommended: false,
-    recommendationReason: "Fastest distance, but high risk due to a recent active landslide blockage.",
-    riskReasons: [
-      "Active landslide reported 2 days ago blocking the outer lane",
-      "Severe road-disruption probability over 80%",
-    ],
-    recentIncidents: [{ title: "Active landslide reported near km 142", time: "2 days ago" }],
-    expectedRecovery: "Approximately 18–24 hours for heavy-machinery clearing",
-  },
-};
+const MapComponent = dynamic(() => import("@/components/MapComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[480px] w-full items-center justify-center rounded-[10px] border border-line bg-canvas text-sm text-muted">
+      Loading map…
+    </div>
+  ),
+});
 
 interface Mission {
   missionId?: string;
@@ -114,7 +70,6 @@ export default function DriverMissionPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [truckNo, setTruckNo] = useState<string | null>(null);
   const [missions, setMissions] = useState<Mission[]>([]);
-  const [activeRoute, setActiveRoute] = useState<RouteModalData | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -138,26 +93,12 @@ export default function DriverMissionPage() {
         setLoading(false);
       }
     })();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   const primary =
     missions.find((m) => m.status === "IN_PROGRESS") ?? missions[0] ?? null;
   const others = primary ? missions.filter((m) => m !== primary) : [];
-
-  const actions = (
-    <div className="flex flex-wrap items-center gap-3">
-      <Link
-        href="/report"
-        className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:border-primary hover:text-primary"
-      >
-        <Icon name="alertTriangle" size={15} />
-        Report incident
-      </Link>
-    </div>
-  );
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-canvas text-ink">
@@ -177,7 +118,13 @@ export default function DriverMissionPage() {
                   : "Pre-assigned transport parameters and live route recommendations."}
               </p>
             </div>
-            {actions}
+            <Link
+              href="/report"
+              className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:border-primary hover:text-primary"
+            >
+              <Icon name="alertTriangle" size={15} />
+              Report incident
+            </Link>
           </div>
 
           {/* States */}
@@ -203,10 +150,9 @@ export default function DriverMissionPage() {
                 {errorCode === 401
                   ? "Sign in with your driver account to view the missions assigned to your truck."
                   : errorCode === 403
-                  ? "This view is for government-assigned drivers. Switch to your user dashboard for route planning."
+                  ? "This view is for government-assigned drivers."
                   : errorCode === 404
-                  ? errorMsg ||
-                    "No truck is linked to your driver profile yet. Contact your authority administrator."
+                  ? errorMsg || "No truck is linked to your driver profile yet. Contact your authority administrator."
                   : "We couldn't reach the mission service right now. Please try again shortly."}
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -215,17 +161,7 @@ export default function DriverMissionPage() {
                     href="/login"
                     className="inline-flex items-center gap-1.5 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
                   >
-                    Sign in
-                    <Icon name="arrowRight" size={15} />
-                  </Link>
-                )}
-                {errorCode === 403 && (
-                  <Link
-                    href="/user/dashboard"
-                    className="inline-flex items-center gap-1.5 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
-                  >
-                    Go to dashboard
-                    <Icon name="arrowRight" size={15} />
+                    Sign in <Icon name="arrowRight" size={15} />
                   </Link>
                 )}
               </div>
@@ -245,7 +181,7 @@ export default function DriverMissionPage() {
           ) : (
             <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
               {/* Left: mission details */}
-              <div className="space-y-6 lg:col-span-5">
+              <div className="space-y-6 lg:col-span-4">
                 <div className="overflow-hidden rounded-[10px] border border-line bg-surface">
                   <div className="tricolor-strip" aria-hidden="true" />
                   <div className="p-6 sm:p-7">
@@ -261,9 +197,7 @@ export default function DriverMissionPage() {
                       {(() => {
                         const s = statusMeta(primary.status);
                         return (
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${s.chip}`}
-                          >
+                          <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${s.chip}`}>
                             <span className={`h-2 w-2 rounded-full ${s.dot}`} />
                             {s.label}
                           </span>
@@ -285,18 +219,12 @@ export default function DriverMissionPage() {
                         </div>
                         <div className="space-y-4">
                           <div>
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-subtle">
-                              From (origin)
-                            </span>
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-subtle">From</span>
                             <p className="text-[15px] font-semibold text-ink">{(primary.origin || "—").toUpperCase()}</p>
                           </div>
                           <div>
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-subtle">
-                              To (destination)
-                            </span>
-                            <p className="text-[15px] font-semibold text-ink">
-                              {(primary.destination || "—").toUpperCase()}
-                            </p>
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-subtle">To</span>
+                            <p className="text-[15px] font-semibold text-ink">{(primary.destination || "—").toUpperCase()}</p>
                           </div>
                         </div>
                       </div>
@@ -304,42 +232,22 @@ export default function DriverMissionPage() {
 
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="rounded-md border border-line bg-canvas p-4">
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                          <Icon name="shieldCheck" size={13} className="text-subtle" />
-                          Cargo
-                        </span>
-                        <p className="mt-1 text-[15px] font-semibold text-ink">
-                          {CARGO_LABELS[primary.cargoType ?? ""] || primary.cargoType || "—"}
-                        </p>
-                      </div>
-                      <div className="rounded-md border border-line bg-canvas p-4">
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                          <Icon name="gauge" size={13} className="text-subtle" />
-                          Quantity
-                        </span>
-                        <p className="mt-1 text-[15px] font-semibold text-ink">
-                          {primary.cargoQuantity || "—"}
-                        </p>
-                      </div>
-                      <div className="rounded-md border border-line bg-canvas p-4">
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                          <Icon name="truck" size={13} className="text-subtle" />
-                          Truck
-                        </span>
-                        <p className="mt-1 font-mono text-[15px] font-semibold tabular-nums text-ink">
-                          {primary.truckNo || truckNo || "—"}
-                        </p>
-                      </div>
-                      <div className="rounded-md border border-line bg-canvas p-4">
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                          <Icon name="clock" size={13} className="text-subtle" />
-                          Target arrival
-                        </span>
-                        <p className="mt-1 text-[13px] font-semibold text-ink">
-                          {formatDate(primary.targetArrival)}
-                        </p>
-                      </div>
+                      {[
+                        { icon: "shieldCheck" as const, label: "Cargo", value: CARGO_LABELS[primary.cargoType ?? ""] || primary.cargoType || "—" },
+                        { icon: "gauge" as const, label: "Quantity", value: primary.cargoQuantity || "—" },
+                        { icon: "truck" as const, label: "Truck", value: primary.truckNo || truckNo || "—", mono: true },
+                        { icon: "clock" as const, label: "Target arrival", value: formatDate(primary.targetArrival), small: true },
+                      ].map(({ icon, label, value, mono, small }) => (
+                        <div key={label} className="rounded-md border border-line bg-canvas p-4">
+                          <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                            <Icon name={icon} size={13} className="text-subtle" />
+                            {label}
+                          </span>
+                          <p className={`mt-1 font-semibold text-ink ${mono ? "font-mono text-[15px]" : ""} ${small ? "text-[13px]" : "text-[15px]"}`}>
+                            {value}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -354,19 +262,12 @@ export default function DriverMissionPage() {
                       {others.map((m, i) => {
                         const s = statusMeta(m.status);
                         return (
-                          <li
-                            key={m.missionId || i}
-                            className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
-                          >
+                          <li key={m.missionId || i} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-ink">
-                                {m.origin} → {m.destination}
-                              </p>
+                              <p className="truncate text-sm font-semibold text-ink">{m.origin} → {m.destination}</p>
                               <p className="font-mono text-[12px] text-subtle">{m.missionId}</p>
                             </div>
-                            <span
-                              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${s.chip}`}
-                            >
+                            <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${s.chip}`}>
                               <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
                               {s.label}
                             </span>
@@ -378,16 +279,20 @@ export default function DriverMissionPage() {
                 )}
               </div>
 
-              {/* Right: map */}
-              <div className="w-full lg:col-span-7">
-                <MapPlaceholder
-                  origin={primary.origin || "Origin"}
-                  destination={primary.destination || "Destination"}
-                  recommendedRouteName="Route 1"
-                  recommendedRisk="18%"
-                  recommendedEta="8h 05m"
-                  onRouteClick={(key) => setActiveRoute(ROUTES_DATA[key])}
-                />
+              {/* Right: real map with routes */}
+              <div className="w-full lg:col-span-8">
+                <div className="overflow-hidden rounded-[10px] border border-line">
+                  <MapComponent
+                    origin={primary.origin || ""}
+                    destination={primary.destination || ""}
+                    height="560px"
+                    mode="routes"
+                    showControls={false}
+                  />
+                </div>
+                <p className="mt-2 text-[12px] text-muted">
+                  Map powered by Mappls · Click a route in the legend to see risk analysis
+                </p>
               </div>
             </div>
           )}
@@ -395,9 +300,6 @@ export default function DriverMissionPage() {
       </main>
 
       <Footer />
-
-      {/* Route detail modal */}
-      <RouteModal route={activeRoute} onClose={() => setActiveRoute(null)} />
     </div>
   );
 }
