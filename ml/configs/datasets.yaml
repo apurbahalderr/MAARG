@@ -1,0 +1,27 @@
+landsides:
+  source: isro
+  raw_dir: ml/data/raw/isro_landslides
+  processed_path: ml/data/processed/landslides.parquet
+
+imd_rainfall:
+  source: imd
+  product: daily_0.25_degree
+  raw_dir: ml/data/raw/imd_rainfall
+  processed_path: ml/data/processed/imd_rainfall.parquet
+
+imerg:
+  source: nasa
+  product: IMERG_V07B
+  raw_dir: ml/data/raw/imerg
+  processed_path: ml/data/processed/imerg.parquet
+
+smap:
+  source: nasa
+  product: SMAP_L4_V008
+  raw_dir: ml/data/raw/smap
+  processed_path: ml/data/processed/smap.parquet
+
+srtm:
+  source: usgs
+  product: SRTMGL1
+  raw_dir: ml/data/raw/srtm

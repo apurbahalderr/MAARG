@@ -1,0 +1,25 @@
+feature,type,description
+segment_id,ID,Road segment identifier
+route_id,ID,Candidate route identifier
+timestamp,datetime,Prediction timestamp
+distance_km,float,Segment length
+base_speed_kmph,float,Baseline speed
+slope_mean,float,Mean segment slope
+slope_max,float,Maximum/local slope
+elevation_change,float,Elevation change proxy
+historical_landslide_count_1km,int,Historical hazard density proxy
+historical_landslide_count_5km,int,Broader historical hazard density proxy
+days_since_nearest_landslide,int,Historical recency proxy
+historical_route_landslide_density,float,Historical route susceptibility proxy
+rain_1h,float,Rainfall preceding 1 hour
+rain_6h,float,Rainfall preceding 6 hours
+rain_24h,float,Rainfall preceding 24 hours
+rain_72h,float,Rainfall preceding 72 hours
+rain_change_3h,float,Recent rainfall change
+soil_moisture_surface,float,Surface soil moisture proxy
+soil_moisture_rootzone,float,Root-zone soil moisture proxy
+soil_moisture_delta_24h,float,24-hour soil moisture change
+active_incident_count_1km,int,Nearby active incidents
+active_incident_severity_score,float,Severity-weighted incidents
+month,int,Month
+disruption_next_6h,int,TARGET: disruption in next six hours
