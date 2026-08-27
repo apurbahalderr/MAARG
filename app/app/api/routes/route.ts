@@ -20,6 +20,7 @@ const url =
   `https://route.mappls.com/route/direction/` +
   `route_adv/trucking/${origin};${dest}` +
   `?geometries=geojson` +
+  `&alternatives=3` +
   `&steps=true` +
   `&access_token=${MAPPLS_KEY}`;
 
@@ -32,6 +33,11 @@ const url =
     const data = await response.json();
     
     console.log(data);
+
+    // will call ML end point
+    // ml will send with route number and their severity
+    // 
+    // append the severity to the data of all three routes
 
     if (!response.ok) {
       const errText = await response.text();
