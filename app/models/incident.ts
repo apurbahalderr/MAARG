@@ -28,6 +28,7 @@ export interface IIncident extends Document {
     coordinates: [number, number];
   };
 
+  imgUrl?: string;
   description?: string;
 
   source:
@@ -87,6 +88,7 @@ const incidentSchema = new Schema<IIncident>(
       },
     },
 
+    imgUrl: String,
     description: String,
 
     source: {

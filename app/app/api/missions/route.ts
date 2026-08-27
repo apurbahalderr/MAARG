@@ -7,6 +7,7 @@ import { connectDB } from "@/lib/connectDB";
 import { Mission } from "@/models/mission";
 import { verifyJWT } from "@/utils/verifyJWT";
 import generateID from "@/utils/generateID";
+import { User } from "@/models/user";
 
 const createMissionSchema = z.object({
   truckNo: z.string().trim().min(1, "Truck number is required"),
@@ -55,7 +56,17 @@ export async function POST(req: NextRequest) {
     const missionId = generateID("M")
 
     await connectDB();
-    const mission = await Mission.create({ ...parsed.data, missionId });
+
+    const driverId = await User.findOne({ "driverProfile.truckNo": parsed.data.truckNo }).select("_id").lean(); // finding the driverId based on the truckNo provided
+
+    if (!driverId) {
+      return NextResponse.json(
+        { success: false, message: "No driver found for the provided truck number" },
+        { status: 404 }
+      );
+    }
+
+    const mission = await Mission.create({ ...parsed.data, missionId, driverId: driverId._id });
 
     return NextResponse.json(
       { success: true, message: "Mission created successfully", mission },
