@@ -1,0 +1,1689 @@
+MAARG (Golden Arrows) — ML + Routing Master Technical Plan
+===============================================================
+
+Purpose
+-------
+This document is the working master reference for the ML/routing side of
+MAARG. It records what has already been completed, the current architecture,
+the exact data/API contracts, what is intentionally synthetic for SIH Round 1,
+what will be replaced with real data for later rounds, and the remaining
+implementation plan.
+
+The project is an AI-based early-warning and landslide/disruption-aware
+logistics routing system for the North Eastern Region (NER).
+
+The most important architectural principle is:
+
+    Mappls generates feasible candidate routes.
+    Model 1 predicts disruption risk.
+    Model 2 predicts additional ETA delay.
+    Backend makes the final route decision.
+    Frontend displays the result and live updates.
+
+Do not merge these responsibilities together.
+
+================================================================
+1. CURRENT OVERALL ARCHITECTURE
+================================================================
+
+USER / FIELD OFFICIAL / DRIVER
+          |
+          v
+       FRONTEND
+          |
+          | HTTP request
+          v
+     NEXT.JS BACKEND
+          |
+          | origin + destination + incident context
+          v
+ MAPPLS PREDICTIVE ROUTING
+          |
+          | primary + up to 2 alternatives
+          v
+   CANDIDATE ROUTES
+          |
+          v
+      ML SERVICE
+     /          \
+    /            \
+   v              v
+MODEL 1        MODEL 2
+Risk           ETA Delay
+   |              |
+   v              v
+Disruption      Adjusted ETA
+Risk JSON       JSON
+    \             /
+     \           /
+      v         v
+       NEXT.JS BACKEND
+              |
+              | final operational decision
+              v
+        SELECTED ROUTE
+              |
+              v
+          FRONTEND
+              |
+        +-----+------+
+        |            |
+      DRIVER       ADMIN
+      warning      dashboard
+
+SSE/live updates remain a BACKEND/FRONTEND responsibility.
+The ML service is HTTP/JSON and does not own SSE.
+
+================================================================
+2. CURRENT REPOSITORY STRUCTURE
+================================================================
+
+The current structure must remain the reference structure.
+
+MAARG/
+├── app/
+└── ml/
+    ├── .env
+    ├── .gitignore
+    ├── requirements.txt
+    ├── .venv/
+    ├── data/
+    │   ├── features/
+    │   ├── interim/
+    │   ├── processed/
+    │   ├── raw/
+    │   │   ├── imd_rainfall/
+    │   │   └── srtm/
+    │   └── samples/
+    ├── models/
+    └── src/
+        ├── route_pipeline/
+        ├── model1_disruption_risk/
+        ├── model2_eta/
+        ├── api/
+        ├── cv/
+        ├── news/
+        └── nlp/
+
+Important existing ML files:
+
+ml/src/model1_disruption_risk/route_risk.py
+    Existing Model 1 inference and route-risk aggregation.
+
+ml/src/route_pipeline/mappls_adapter.py
+    Mappls Predictive Routing adapter, currently supporting mock/live design.
+
+ml/src/route_pipeline/geometry.py
+    Geometry decoding, distance calculations, local analytical segmentation.
+
+ml/src/route_pipeline/synthetic_features.py
+    Synthetic environmental features used by the prototype and Model 2.
+
+ml/src/model2_eta/route_eta.py
+    Model 2 ETA/delay inference.
+
+ml/src/api/incident_router.py
+    FastAPI endpoints including:
+        POST /risk/predict
+        POST /eta/predict
+
+ml/run_pipeline.py
+    Local Mappls + Model 1 demonstration.
+
+ml/run_pipeline_v2.py
+    Local Mappls + Model 1 + Model 2 demonstration.
+
+ml/train_eta_model.py
+    Model 2 synthetic data generation, training and evaluation.
+
+ml/tests/
+    Reusable ML/API/Mappls/Model 2 tests.
+
+ml/models/eta_xgb_v1.pkl
+    Current Model 2 MVP XGBoost artifact.
+
+================================================================
+3. GIT / TEAMING RULES
+================================================================
+
+Branch:
+    swarnim-dev
+
+ML-owned code should be committed separately from unrelated teammate work.
+
+Do NOT use:
+    git add .
+
+when teammate work is present in the working tree.
+
+Do not stage:
+    .env
+    .venv/
+    raw data such as *.grd
+    unknown teammate modules
+    scratch/debug files
+
+Current branch milestones already completed include:
+    Model 1 synthetic pipeline
+    Mappls Predictive Routing local pipeline
+    Model 2 ETA pipeline
+
+The next changes should be committed as focused milestones.
+
+================================================================
+4. MODEL 1 — WHAT IT DOES
+================================================================
+
+Model 1 is a tabular XGBoost classifier.
+
+Its question is:
+
+    "How likely is this analytical road segment to experience a
+     disruption in the next 6 hours under the current conditions?"
+
+Prediction unit:
+
+    road segment x timestamp
+
+Current training is synthetic data only.
+
+Model 1 is NOT:
+    a routing engine
+    a GPS engine
+    an image model
+    an ETA model
+    a Mappls model
+    a final route selector
+
+Model 1 receives 18 features.
+
+Exact Model 1 features:
+
+RAIN:
+    rain_1h
+    rain_6h
+    rain_24h
+    rain_72h
+    rain_change_3h
+
+SOIL:
+    soil_moisture_surface
+    soil_moisture_rootzone
+    soil_moisture_delta_24h
+
+TERRAIN:
+    slope_mean
+    slope_max
+    elevation_change
+
+HISTORICAL HAZARD:
+    historical_landslide_count_1km
+    historical_landslide_count_5km
+    days_since_nearest_landslide
+    historical_route_landslide_density
+
+CURRENT INCIDENT:
+    active_incident_count_1km
+    active_incident_severity_score
+
+CONTEXT:
+    month
+
+Model 1 produces:
+    disruption_score in [0,1]
+
+Operational bands:
+
+    0.00 <= score < 0.25    LOW
+    0.25 <= score < 0.50    MODERATE
+    0.50 <= score < 0.75    HIGH
+    0.75 <= score <= 1.00   CRITICAL
+
+These are operational demo bands.
+They are NOT calibrated real-world landslide probabilities.
+
+================================================================
+5. MODEL 1 — ROUTE RISK AGGREGATION
+================================================================
+
+Each analytical segment receives a disruption score.
+
+A route may contain many segments:
+
+    Route A:
+        A0
+        A1
+        A2
+        ...
+        A72
+
+The route risk is deliberately NOT a simple mean.
+
+For every route calculate:
+
+    mean_segment_risk
+    p90_segment_risk
+    max_segment_risk
+    high_risk_segments
+    critical_segments
+
+Route risk:
+
+    route_risk =
+        0.50 * mean_segment_risk
+        + 0.30 * p90_segment_risk
+        + 0.20 * max_segment_risk
+
+Clamp route risk to [0,1].
+
+Critical segment:
+    disruption_score >= 0.75
+
+High segment:
+    disruption_score >= 0.50
+
+This protects against one dangerous segment being hidden inside a low
+average.
+
+Example:
+
+    0.10
+    0.12
+    0.15
+    0.95
+    0.10
+
+must explicitly identify the 0.95 segment as critical.
+
+================================================================
+6. MODEL 1 API
+================================================================
+
+Endpoint:
+
+    POST /risk/predict
+
+Purpose:
+    Accept segment feature information and return segment/route
+    disruption risk.
+
+The Model 1 backend-facing output contains route-level fields such as:
+
+{
+  "routes": [
+    {
+      "route_id": "primary",
+      "disruption_risk": 0.74,
+      "risk_band": "HIGH",
+      "mean_segment_risk": 0.31,
+      "p90_segment_risk": 0.72,
+      "max_segment_risk": 0.91,
+      "high_risk_segments": [
+        "primary_s021",
+        "primary_s022"
+      ],
+      "critical_segments": [
+        "primary_s022"
+      ]
+    }
+  ]
+}
+
+Do not send all 18 training features back to the backend as part of the
+normal result.
+
+================================================================
+7. MAPPLS — WHICH API IS USED
+================================================================
+
+MAARG uses:
+
+    Mappls Predictive Routing API
+
+NOT the normal Routing API.
+
+The documented endpoint used by the design is:
+
+    GET https://route.mappls.com/routev2/direction/route
+
+Authentication:
+
+    access_token
+
+The real token belongs in:
+
+    ml/.env
+
+Never hard-code or commit the token.
+
+Current MVP can operate entirely in mock mode.
+
+================================================================
+8. MAPPLS — RESPONSIBILITY
+================================================================
+
+Mappls is responsible for:
+
+    origin/destination routing
+    route generation
+    route alternatives
+    route distance
+    route duration / ETA
+    route geometry
+    avoidance of specified locations/polygons
+
+MAARG is responsible for:
+
+    geometry decoding
+    analytical segmentation
+    environmental/incident features
+    Model 1 disruption risk
+    Model 2 delay/ETA adjustment
+
+The backend is responsible for:
+
+    calling Mappls
+    coordinating ML
+    final route decision
+    SSE/live state
+    frontend integration
+
+================================================================
+9. MAPPLS INTERNAL REQUEST CONTRACT
+================================================================
+
+MAARG internal representation should remain independent of Mappls's
+query-string representation.
+
+Use:
+
+{
+  "origin": {
+    "lat": 26.1445,
+    "lon": 91.7362
+  },
+  "destination": {
+    "lat": 25.5788,
+    "lon": 91.8933
+  },
+  "profile": "driving",
+  "speedTypes": "optimal",
+  "date_time": {
+    "type": 0,
+    "value": ""
+  },
+  "alternatives": 2,
+  "avoid_locations": [],
+  "avoid_polygons": []
+}
+
+Internal coordinate convention:
+    lat = latitude
+    lon = longitude
+
+Only the Mappls adapter converts to Mappls's documented coordinate
+ordering when making the provider request.
+
+Mappls locations conceptually become:
+
+    longitude,latitude;longitude,latitude
+
+For the example:
+
+    91.7362,26.1445;91.8933,25.5788
+
+Candidate-route request should use origin + destination only when
+alternatives are required.
+
+Do not add unnecessary via points.
+
+================================================================
+10. MAPPLS ALTERNATIVES
+================================================================
+
+Current request:
+
+    alternatives = 2
+
+Meaning:
+
+    primary route
+    + up to 2 alternatives
+
+Potential result:
+    1 route
+    2 routes
+    or 3 routes
+
+Do NOT assume exactly three routes will always be returned.
+
+================================================================
+11. AVOIDANCE
+================================================================
+
+For a small number of dangerous road locations:
+
+    avoid_locations
+
+For broader affected zones:
+
+    avoid_polygons
+
+Internal coordinate representation stays:
+
+{
+  "lat": 25.5700,
+  "lon": 91.8800
+}
+
+Provider-specific conversion happens inside the Mappls adapter.
+
+MAARG does NOT send analytical 1-km segments to Mappls.
+
+================================================================
+12. MAPPLS VEHICLE CONSTRAINTS
+================================================================
+
+Mappls supports vehicle-aware routing features such as trucking and
+physical vehicle constraints, but these are NOT currently required by
+the ML MVP.
+
+The current implementation avoids inventing:
+
+    height
+    width
+    length
+    weight
+    axle_load
+    hazmat
+
+If the backend later has real vehicle profile data, this can be added
+to the Mappls request.
+
+This remains a BACKEND/MAPPLS responsibility, not Model 1/Model 2.
+
+================================================================
+13. MAPPLS → MAARG ROUTES
+================================================================
+
+Mappls provides route geometry and route-level distance/time data.
+
+MAARG normalizes that provider response into an internal route contract.
+
+Internal normalized route structure:
+
+{
+  "routes": [
+    {
+      "route_id": "primary",
+      "distance_km": 103.42,
+      "duration_seconds": 11200,
+      "geometry": {
+        "format": "encoded_polyline",
+        "value": "..."
+      },
+      "steps": []
+    }
+  ]
+}
+
+Possible alternatives:
+
+    alternative_1
+    alternative_2
+
+The exact raw provider response stays isolated inside mappls_adapter.py.
+
+Model 1/Model 2 should not depend on raw Mappls JSON shape.
+
+================================================================
+14. ROUTE SEGMENTATION
+================================================================
+
+Segmentation belongs to MAARG.
+
+Mappls returns route geometry.
+
+MAARG then:
+
+    decode geometry
+        ↓
+    compute cumulative distance
+        ↓
+    create approximately 1-km analytical segments
+
+These are analytical ML windows, NOT official Mappls road IDs.
+
+A segment should contain information such as:
+
+{
+  "segment_index": 0,
+  "start_km": 0.0,
+  "end_km": 1.01,
+  "start_coordinate": {
+    "lat": 26.1445,
+    "lon": 91.7362
+  },
+  "end_coordinate": {
+    "lat": 26.1512,
+    "lon": 91.7421
+  },
+  "geometry": [
+    {
+      "lat": 26.1445,
+      "lon": 91.7362
+    },
+    {
+      "lat": 26.1472,
+      "lon": 91.7390
+    }
+  ]
+}
+
+The exact segment boundaries may vary slightly around 1 km.
+
+Do not make one Mappls API request per segment.
+
+The Mappls input-location limit has no impact on our internal analytical
+segmentation because segmentation happens after route retrieval.
+
+================================================================
+15. SYNTHETIC STATUS — ROUND 1
+================================================================
+
+The current ML prototypes use synthetic data.
+
+This is intentional for the first SIH round.
+
+Real data is planned for later rounds.
+
+Do not describe synthetic metrics as real-world accuracy.
+
+The synthetic dataset is designed to approximate the intended real schema
+so that replacing synthetic sources with real data does not require
+redesigning the model API.
+
+================================================================
+16. MODEL 2 — PURPOSE
+================================================================
+
+Model 2 answers:
+
+    "How much additional travel delay should MAARG expect beyond
+     the Mappls baseline ETA under current weather, terrain,
+     incident and disruption conditions?"
+
+Model 2 does NOT replace Mappls.
+
+Model 2 predicts additional delay.
+
+Core equation:
+
+    adjusted_eta_minutes =
+        mappls_baseline_eta_minutes
+        + predicted_delay_minutes
+
+The recommended target is:
+
+    actual_delay_minutes
+
+defined as:
+
+    actual_delay_minutes =
+        actual_segment_travel_time_minutes
+        - mappls_baseline_eta_minutes
+
+================================================================
+17. WHY MODEL 2 IS SEGMENT-LEVEL
+================================================================
+
+A whole-route ETA model hides where delay originates.
+
+Segment-level Model 2 allows:
+
+    segment delay prediction
+        ↓
+    route delay = sum(segment delays)
+
+This supports future:
+    live ETA updates
+    remaining-route ETA
+    dynamic rerouting
+    identifying where delay is building
+
+================================================================
+18. MODEL 2 EXACT 21-FEATURE SCHEMA
+================================================================
+
+The current Model 2 supervised feature schema is EXACTLY:
+
+1. segment_distance_km
+2. mappls_baseline_eta_minutes
+3. mappls_baseline_speed_kmph
+4. disruption_risk
+5. active_incident_count_1km
+6. active_incident_severity_score
+7. rain_1h
+8. rain_6h
+9. rain_24h
+10. soil_moisture_surface
+11. soil_moisture_delta_24h
+12. slope_mean
+13. slope_max
+14. hour_of_day
+15. day_of_week
+16. month
+17. historical_mean_travel_time_minutes
+18. historical_median_travel_time_minutes
+19. recent_travel_time_15m
+20. recent_travel_time_30m
+21. recent_travel_time_60m
+
+Metadata:
+    timestamp
+    route_id
+    segment_id
+
+Do not feed raw IDs/datetime into the model.
+
+================================================================
+19. MODEL 2 FEATURE SOURCES — FUTURE REAL DATA
+================================================================
+
+Feature:
+    segment_distance_km
+Future source:
+    MAARG route geometry / Mappls geometry
+
+Feature:
+    mappls_baseline_eta_minutes
+Source:
+    Mappls Predictive Routing API
+
+Feature:
+    mappls_baseline_speed_kmph
+Source:
+    derived from segment distance and Mappls baseline ETA
+
+Feature:
+    disruption_risk
+Source:
+    Model 1
+
+Feature:
+    active_incident_count_1km
+Source:
+    MAARG incident/reporting system
+
+Feature:
+    active_incident_severity_score
+Source:
+    MAARG incident verification/incident records
+
+Feature:
+    rain_1h, rain_6h, rain_24h
+Source:
+    IMERG / IMD-compatible rainfall sources
+
+Feature:
+    soil_moisture_surface
+Source:
+    SMAP
+
+Feature:
+    soil_moisture_delta_24h
+Source:
+    SMAP-derived change
+
+Feature:
+    slope_mean, slope_max
+Source:
+    SRTM-derived terrain
+
+Feature:
+    hour_of_day, day_of_week, month
+Source:
+    timestamp
+
+Feature:
+    historical_mean_travel_time_minutes
+    historical_median_travel_time_minutes
+    recent_travel_time_15m
+    recent_travel_time_30m
+    recent_travel_time_60m
+Source:
+    future real vehicle telemetry / GNSS/NavIC-derived traversal history
+
+Ground truth:
+    actual_segment_travel_time_minutes
+Source:
+    actual vehicle traversal derived from GNSS/NavIC/telemetry
+
+Critical missing real-world dependency:
+    historical/current vehicle telemetry
+
+Without real traversal observations there is no proper real-world supervised
+ETA target.
+
+================================================================
+20. MODEL 2 SYNTHETIC DATASET
+================================================================
+
+Current synthetic dataset:
+
+    ml/data/samples/model2_eta_training.csv
+
+Current reported size:
+    262,080 rows
+
+Current reported structure:
+    30 analytical segments
+    3 candidate routes
+    15-minute observations
+    3 months of synthetic history
+
+The generator is intended to preserve temporal structure and avoid leakage.
+
+Synthetic behaviour includes:
+    daily patterns
+    weekly patterns
+    seasonal patterns
+    rainfall-related slowdown
+    disruption-related slowdown
+    incident effects
+    slope effects
+    recent travel trends
+    gradual recovery
+    stochastic variation
+
+Training target:
+    actual_delay_minutes
+
+================================================================
+21. MODEL 2 DATA LEAKAGE RULE
+================================================================
+
+At prediction time T, only information known by T may be used.
+
+Never use:
+    future actual travel time
+    future rainfall
+    future incident state
+    future speed
+    future observations
+
+Historical features must be calculated using prior observations only.
+
+The intended implementation uses:
+    shift-before-rolling/expanding logic
+
+Time split:
+    chronological
+
+Current intended:
+    70% train
+    15% validation
+    15% test
+
+================================================================
+22. MODEL 2 BASELINES
+================================================================
+
+Baseline A:
+    no-delay
+    predicted_delay = 0
+
+Meaning:
+    trust Mappls
+
+Baseline B:
+    recent-delay
+
+Baseline C:
+    historical-delay
+
+Primary supervised MVP:
+    XGBoost Regressor
+
+Why baselines matter:
+    We need to prove that ML adds value.
+
+================================================================
+23. MODEL 2 CURRENT MODEL
+================================================================
+
+Current selected MVP Model 2:
+
+    XGBoost Regressor
+
+Artifact:
+
+    ml/models/eta_xgb_v1.pkl
+
+Reason:
+    works in current environment
+    fast inference
+    compatible with current ML stack
+    successfully learned the synthetic benchmark relationship
+
+Current reported synthetic benchmark:
+    MAE ≈ 0.47 minutes
+    RMSE ≈ 0.73 minutes
+    MAPE ≈ 24.25%
+
+These are synthetic benchmark metrics only.
+
+They MUST NOT be presented as real-world ETA accuracy.
+
+================================================================
+24. TIMESFM STATUS
+================================================================
+
+TimesFM was considered as an alternative Model 2 candidate.
+
+It was attempted in an isolated environment.
+
+The current native Windows environment encountered JAX/JAXLIB dependency/runtime
+issues, so a full TimesFM benchmark was not completed.
+
+TimesFM is therefore NOT in the current production dependency path.
+
+Current MVP:
+    XGBoost
+
+Future:
+    TimesFM can be revisited in a compatible environment such as a properly
+    isolated Linux/WSL/cloud environment if desired.
+
+Do not describe TimesFM as globally inferior based only on the Windows test.
+
+Current conclusion is:
+    XGBoost is the stable MVP under the current development environment.
+
+================================================================
+25. MODEL 2 INPUT JSON CONTRACT
+================================================================
+
+POST /eta/predict
+
+Input:
+
+{
+  "timestamp": "2026-08-26T10:15:00+05:30",
+  "routes": [
+    {
+      "route_id": "primary",
+      "mappls_baseline_route_eta_minutes": 130.0,
+      "segments": [
+        {
+          "segment_id": "primary_s000",
+          "segment_distance_km": 1.02,
+          "mappls_baseline_eta_minutes": 2.1,
+          "mappls_baseline_speed_kmph": 29.1,
+          "disruption_risk": 0.62,
+          "active_incident_count_1km": 1,
+          "active_incident_severity_score": 0.75,
+          "rain_1h": 18.4,
+          "rain_6h": 54.7,
+          "rain_24h": 121.5,
+          "soil_moisture_surface": 0.43,
+          "soil_moisture_delta_24h": 0.07,
+          "slope_mean": 21.3,
+          "slope_max": 32.1,
+          "hour_of_day": 10,
+          "day_of_week": 2,
+          "month": 8,
+          "historical_mean_travel_time_minutes": 2.4,
+          "historical_median_travel_time_minutes": 2.3,
+          "recent_travel_time_15m": 3.0,
+          "recent_travel_time_30m": 2.8,
+          "recent_travel_time_60m": 2.5
+        }
+      ]
+    }
+  ]
+}
+
+Do not include:
+    actual_segment_travel_time_minutes
+    actual_delay_minutes
+
+in runtime inference JSON.
+
+Those are training/ground-truth values.
+
+================================================================
+26. MODEL 2 OUTPUT JSON CONTRACT
+================================================================
+
+Output:
+
+{
+  "routes": [
+    {
+      "route_id": "primary",
+      "mappls_baseline_route_eta_minutes": 130.0,
+      "predicted_route_delay_minutes": 21.4,
+      "adjusted_route_eta_minutes": 151.4,
+      "segments": [
+        {
+          "segment_id": "primary_s000",
+          "mappls_baseline_eta_minutes": 2.1,
+          "predicted_delay_minutes": 0.7,
+          "adjusted_eta_minutes": 2.8
+        }
+      ]
+    }
+  ]
+}
+
+Mathematical rules:
+
+    adjusted_segment_eta =
+        baseline_segment_eta + predicted_delay
+
+    predicted_route_delay =
+        sum(segment predicted delays)
+
+    adjusted_route_eta =
+        baseline_route_eta + predicted_route_delay
+
+Model 2 must NOT choose the final route.
+
+================================================================
+27. MODEL 1 + MODEL 2 INTEGRATION
+================================================================
+
+The dependency is:
+
+    Route
+      ↓
+    segments
+      ↓
+    Model 1
+      ↓
+    disruption_risk
+      ↓
+    Model 2 input
+      ↓
+    predicted delay
+      ↓
+    adjusted ETA
+
+Model 2 consumes:
+    numeric disruption_risk
+
+Do not duplicate the Model 1 calculation.
+
+Do not use textual HIGH/LOW as the main Model 2 feature.
+
+================================================================
+28. FASTAPI CONTRACT
+================================================================
+
+Current ML service:
+
+    POST /risk/predict
+    POST /eta/predict
+
+HTTP/JSON.
+
+Backend talks to ML using HTTP.
+
+ML does not talk directly to frontend.
+
+ML does not own SSE.
+
+Expected interaction:
+
+    Backend
+       |
+       | HTTP POST /risk/predict
+       v
+    ML FastAPI
+       |
+       | JSON
+       v
+    Backend
+
+and:
+
+    Backend
+       |
+       | HTTP POST /eta/predict
+       v
+    ML FastAPI
+       |
+       | JSON
+       v
+    Backend
+
+================================================================
+29. FULL LOCAL PIPELINE — CURRENT STATE
+================================================================
+
+Current local mock flow:
+
+    MAARG internal request
+        ↓
+    Mappls Predictive Routing mock
+        ↓
+    candidate routes
+        ↓
+    normalized routes
+        ↓
+    geometry decode
+        ↓
+    approximate 1-km analytical segmentation
+        ↓
+    synthetic features
+        ↓
+    Model 1
+        ↓
+    disruption risk
+        ↓
+    Model 2
+        ↓
+    predicted delay
+        ↓
+    adjusted ETA
+        ↓
+    final ML JSON
+
+This is currently operational in mock mode.
+
+No real Mappls API key is required for local development.
+
+================================================================
+30. FRONTEND → BACKEND → MAPPLS → ML — EASY FLOW
+================================================================
+
+A user selects:
+
+    Origin
+    Destination
+
+Frontend sends that to Next.js backend.
+
+Backend:
+    1. receives origin/destination
+    2. receives incident context if applicable
+    3. asks Mappls for candidate routes
+    4. receives route geometry + distance + duration
+    5. normalizes route data
+    6. passes candidate route information to ML
+
+ML:
+    1. creates/uses analytical segments
+    2. gets or receives features
+    3. Model 1 predicts disruption risk
+    4. Model 2 predicts additional delay
+    5. returns risk + ETA JSON
+
+Backend:
+    1. combines route risk and adjusted ETA
+    2. applies operational rules
+    3. chooses final route
+    4. sends final route to frontend
+
+Frontend:
+    displays:
+        selected route
+        risk
+        ETA
+        warning
+        fallback/alternative routes
+        live state
+
+================================================================
+31. FINAL BACKEND ROUTE DECISION
+================================================================
+
+This part is NOT currently owned by Model 1 or Model 2.
+
+Backend should combine:
+
+    disruption risk
+    adjusted ETA
+    route availability
+    mission priority
+    operational safety policy
+
+MVP conceptual policy:
+
+    CRITICAL route
+        → reject or strongly penalize
+
+    HIGH route
+        → strong penalty
+
+    LOW/MODERATE routes
+        → compare adjusted ETA + risk
+
+Possible scoring model for future backend implementation:
+
+    route_score =
+        0.65 * normalized_adjusted_eta
+        + 0.35 * disruption_risk
+
+Lower score is better.
+
+This is only an initial operational policy.
+Backend should own the final decision.
+
+================================================================
+32. LIVE GPS / NAVIC FUTURE FLOW
+================================================================
+
+Eventually:
+
+    Truck GNSS/NavIC
+        ↓
+    current latitude/longitude
+        ↓
+    Backend
+        ↓
+    determine current route / current analytical segment
+        ↓
+    determine remaining route
+        ↓
+    updated weather/incident context
+        ↓
+    Model 1 risk
+        ↓
+    Model 2 ETA
+        ↓
+    Backend decision
+        ↓
+    reroute if required
+
+The actual GNSS/NavIC data source and device integration is a future
+backend/device milestone.
+
+For real Model 2 training, GNSS/NavIC/telemetry is the preferred source
+for actual segment traversal time.
+
+================================================================
+33. REAL-DATA REPLACEMENT PLAN
+================================================================
+
+The synthetic Model 2 feature schema is intentionally designed to match
+future real sources.
+
+Replacement plan:
+
+SYNTHETIC:
+    rain_1h, rain_6h, rain_24h
+        →
+REAL:
+    IMERG / IMD-compatible ingestion
+
+SYNTHETIC:
+    soil moisture
+        →
+REAL:
+    SMAP
+
+SYNTHETIC:
+    terrain
+        →
+REAL:
+    SRTM-derived features
+
+SYNTHETIC:
+    disruption
+        →
+REAL:
+    Model 1 + actual incident data
+
+SYNTHETIC:
+    historical/recent travel time
+        →
+REAL:
+    GNSS/NavIC/vehicle telemetry history
+
+SYNTHETIC:
+    actual travel time target
+        →
+REAL:
+    actual segment traversal from telemetry
+
+The Model 2 model/input/output contract should remain stable while the
+feature provider changes.
+
+================================================================
+34. REAL MAPPLS INTEGRATION — FUTURE
+================================================================
+
+When the team obtains the Mappls credentials:
+
+ml/.env:
+
+    MAPPLS_MODE=live
+    MAPPLS_ACCESS_TOKEN=YOUR_TOKEN
+
+The token must never be committed.
+
+The intended live path:
+
+    Backend
+        ↓
+    Mappls Predictive Routing
+        ↓
+    primary + alternatives
+        ↓
+    normalized route data
+        ↓
+    MAARG ML
+
+The current local mock adapter exists so real Mappls can replace the
+mock transport without redesigning Model 1/2.
+
+================================================================
+35. CURRENT GAPS — DO NOT HIDE THEM
+================================================================
+
+The system is a local synthetic prototype in the following respects:
+
+1. Model 1 training data is synthetic.
+2. Model 2 training data is synthetic.
+3. Mappls integration is currently mock/local.
+4. Real historical vehicle traversal data is not yet available.
+5. TimesFM was not benchmarked successfully in the current Windows setup.
+6. Final route-selection policy is not yet integrated into the backend.
+7. Live GPS/NavIC integration is not yet completed.
+8. Real weather/soil/terrain ingestion is not yet integrated into Model 2.
+
+These are not model bugs.
+They are the remaining production-integration milestones.
+
+================================================================
+36. CURRENT COMPLETED CHECKLIST
+================================================================
+
+MODEL 1:
+    [x] synthetic dataset
+    [x] training
+    [x] evaluation
+    [x] artifact
+    [x] inference
+    [x] API
+    [x] validation
+    [x] route-risk aggregation
+    [x] tests
+
+MAPPLS LOCAL:
+    [x] Predictive Routing selected
+    [x] request builder
+    [x] location format
+    [x] alternatives
+    [x] speedTypes
+    [x] date_time
+    [x] avoid_locations
+    [x] avoid_polygons
+    [x] mock response
+    [x] normalization
+    [x] geometry decoding
+    [x] local segmentation
+    [x] Model 1 integration
+    [x] tests
+
+MODEL 2:
+    [x] target definition
+    [x] 21-feature schema
+    [x] synthetic time series
+    [x] leakage handling
+    [x] chronological split
+    [x] no-delay baseline
+    [x] recent-delay baseline
+    [x] historical-delay baseline
+    [x] XGBoost Regressor
+    [x] saved artifact
+    [x] /eta/predict
+    [x] Model 1 → Model 2 integration
+    [x] end-to-end mock flow
+    [x] tests
+    [x] TimesFM attempt documented
+
+================================================================
+37. IMMEDIATE NEXT STEPS — HIGH PRIORITY
+================================================================
+
+Because development time is limited, do NOT add unnecessary ML features now.
+
+NEXT 1:
+    Push swarnim-dev after checking the final commit state.
+
+NEXT 2:
+    Get the backend team's exact normalized Mappls route contract.
+
+Questions for backend:
+    - Which exact Mappls response fields are retained?
+    - Is geometry passed encoded or decoded?
+    - What exact route JSON will be sent to ML?
+    - Does backend send segment features or does ML create them?
+    - What vehicle/GPS fields already exist?
+    - What route-selection rule is expected?
+
+NEXT 3:
+    Backend ↔ ML integration.
+
+NEXT 4:
+    Backend ↔ Mappls live integration.
+
+NEXT 5:
+    Final backend route decision.
+
+NEXT 6:
+    GPS/current-position integration.
+
+NEXT 7:
+    Reroute trigger.
+
+NEXT 8:
+    Frontend route/risk/ETA display.
+
+================================================================
+38. SECONDARY / ROUND 2 TASKS
+================================================================
+
+After the MVP integration works:
+
+    real rainfall ingestion
+    real soil moisture
+    real terrain
+    real landslide records
+    real incident history
+    real GNSS/NavIC telemetry
+    real travel-time labels
+    real Model 1 retraining
+    real Model 2 retraining
+    model calibration
+    stronger geospatial/map matching
+    live data refresh
+    route-aware rerouting
+    vehicle-specific Mappls constraints
+    TimesFM in a compatible environment if useful
+    advanced uncertainty estimates
+    route decision optimization
+    monitoring/drift detection
+
+Do not block the first SIH demo on these.
+
+================================================================
+39. DEMO / PRESENTATION STORY
+================================================================
+
+The strongest Round 1 demo story is:
+
+    1. Incident is reported.
+    2. Backend receives origin/destination and incident context.
+    3. Mappls provides candidate routes.
+    4. MAARG segments routes locally.
+    5. Model 1 identifies disruption exposure.
+    6. Model 2 estimates additional delay.
+    7. Backend compares candidate routes.
+    8. A safer/operationally better route is selected.
+    9. Frontend shows:
+           selected route
+           disruption risk
+           ETA
+           warning
+           alternatives
+   10. Future GPS updates can trigger recalculation/rerouting.
+
+Key explanation:
+
+    Mappls = route generation
+    Model 1 = disaster/disruption intelligence
+    Model 2 = ETA/delay intelligence
+    Backend = decision/orchestration
+    Frontend = visualization and user communication
+
+================================================================
+40. HONEST CLAIMS TO USE
+================================================================
+
+Use:
+
+    "synthetic-data prototype"
+    "operational disruption risk score"
+    "risk-aware route evaluation"
+    "risk-adjusted ETA"
+    "Mappls candidate route generation"
+    "prototype demonstrated locally"
+
+Do NOT claim:
+
+    "guaranteed landslide prediction"
+    "guaranteed safe route"
+    "real-world 0.47-minute ETA accuracy"
+    "81% real landslide probability"
+    "Mappls always returns exactly 3 routes"
+    "fully real-time predictive system"
+    "real-world calibrated performance"
+
+until those claims are actually supported by real data and live testing.
+
+================================================================
+41. SUCCESS CRITERIA FOR THE COMPLETE MVP
+================================================================
+
+The MVP is complete when:
+
+    FRONTEND
+        ↓
+    BACKEND
+        ↓
+    REAL MAPPLS
+        ↓
+    candidate routes
+        ↓
+    ML /risk/predict
+        ↓
+    ML /eta/predict
+        ↓
+    BACKEND route decision
+        ↓
+    FRONTEND
+
+works end-to-end with:
+    real API contracts
+    synthetic ML data if real datasets are unavailable
+    no secret leakage
+    no manual ML intervention during inference
+    correct JSON schemas
+    live error handling
+    clear route/risk/ETA display
+
+================================================================
+42. MASTER DATA / MODEL FLOW
+================================================================
+
+FINAL conceptual pipeline:
+
+                           USER
+                            |
+                            v
+                       FRONTEND
+                            |
+                            v
+                    NEXT.JS BACKEND
+                            |
+            +---------------+---------------+
+            |                               |
+            v                               v
+     INCIDENT/GPS                      ROUTE REQUEST
+            |                               |
+            |                               v
+            |                         MAPPLS PREDICTIVE
+            |                               |
+            |                      +--------+--------+
+            |                      |        |        |
+            |                      v        v        v
+            |                     R1       R2       R3
+            |                      \        |        /
+            |                       \       |       /
+            |                        v      v      v
+            |                         MAARG ML
+            |                            |
+            |                +-----------+-----------+
+            |                |                       |
+            |                v                       v
+            |            MODEL 1                  MODEL 2
+            |         disruption risk           ETA delay
+            |                |                       |
+            |                +-----------+-----------+
+            |                            |
+            +----------------------------+
+                                         v
+                                  BACKEND DECISION
+                                         |
+                          +--------------+--------------+
+                          |                             |
+                          v                             v
+                    SELECTED ROUTE                  WARNINGS
+                          |                             |
+                          +--------------+--------------+
+                                         |
+                                         v
+                                      FRONTEND
+                                         |
+                              +----------+----------+
+                              |                     |
+                              v                     v
+                           DRIVER                 ADMIN
+
+================================================================
+43. PRINCIPLE TO REMEMBER
+================================================================
+
+The ML team does not need to own everything.
+
+Model 1:
+    "What is the disruption risk?"
+
+Model 2:
+    "How much additional delay should we expect?"
+
+Mappls:
+    "What roads can we take?"
+
+Backend:
+    "Which one should we take?"
+
+Frontend:
+    "How do we show and communicate it?"
+
+This separation is the foundation of the MAARG architecture.
+
+================================================================
+END OF MASTER PLAN
+================================================================
+
+
+
+
+
+
+
+other details
+The 5 components
+#	Component	Purpose	Current status
+1	Model 1 — Disruption Risk	Predict disruption/landslide risk for route segments	✅ Built
+2	Model 2 — Dynamic ETA	Predict additional travel delay beyond Mappls ETA	✅ Built
+3	CV / Incident Verification	Analyze field-worker photo/video + text to verify an incident and extract severity/location information	🟡 Teammate building
+4	NLP / Incident Intelligence	Extract cause/severity from reports and translate English → Hindi/Assamese	🟡 Teammate building
+5	News / Disaster Intelligence	Fetch disaster-related news/RSS and turn relevant reports into incident information	🟡 Teammate building
+
+Your teammate's structure you showed earlier confirms the latter three:
+
+ml/src/
+├── cv/
+│   └── verify.py
+│
+├── nlp/
+│   ├── parser.py
+│   └── translator.py
+│
+└── news/
+    └── rss_fetcher.py
+
+And your part is primarily:
+
+ml/src/live/
+├── route_risk.py          ← Model 1
+├── route_eta.py           ← Model 2
+├── mappls_adapter.py      ← routing integration
+├── geometry.py            ← route segmentation
+└── synthetic_features.py  ← prototype feature generation
+One important correction
+
+I would not present all five as "five ML models" in the SIH architecture.
+
+A more technically accurate description is:
+
+AI/ML Layer
+
+Disruption Risk Prediction Model — XGBoost
+Dynamic ETA Prediction Model — XGBoost
+Incident Image Verification Engine — Gemini/CV
+Incident NLP & Translation Engine
+Disaster News Intelligence Engine
+
+The last three are AI/ML engines/modules, not necessarily separately trained predictive ML models.
+
+And these 5 don't form one simple chain
+
+They operate around the central system:
+
+                    ┌──────────────────────┐
+                    │   INCIDENT SOURCES   │
+                    │                      │
+                    │ Photo/Text           │
+                    │ News/RSS             │
+                    │ Field Reports        │
+                    └──────────┬───────────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │  CV / NLP / NEWS    │
+                    │  AI ENGINES         │
+                    └──────────┬──────────┘
+                               │
+                         INCIDENT DATA
+                               │
+                               ▼
+                         ┌───────────┐
+                         │ BACKEND   │
+                         └─────┬─────┘
+                               │
+                         Route request
+                               │
+                               ▼
+                    ┌────────────────────┐
+                    │ MAPPLS PREDICTIVE  │
+                    │ ROUTING             │
+                    └─────────┬──────────┘
+                              │
+                       Candidate routes
+                              │
+                 ┌────────────▼────────────┐
+                 │       MAARG ML          │
+                 │                         │
+                 │ Model 1 → Risk          │
+                 │ Model 2 → ETA           │
+                 └────────────┬────────────┘
+                              │
+                         Route intelligence
+                              │
+                              ▼
+                         BACKEND
+                              │
+                         Final decision
+                              │
+                              ▼
+                          FRONTEND
+
+So your immediate responsibility is Models 1 + 2 and their Mappls/routing integration. Your teammates are handling the CV/NLP/news side.
+
+And importantly, none of those five is the Mappls route optimizer itself. Mappls is the external routing engine; MAARG's ML layer adds disaster-risk and ETA intelligence on top of it.

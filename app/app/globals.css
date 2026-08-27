@@ -1,49 +1,51 @@
 @import "tailwindcss";
 
 /* =========================================================
-   MAARG — Government Official (UX4G) design tokens
-  Consumed by Tailwind v4 as bg-, text-, and border- utilities.
+   MAARG — official portal design tokens
+   Consumed by Tailwind v4 as bg-, text-, border- and ring- utilities.
+   Direction: clean government portal — white surfaces, generous
+   whitespace, hairline borders, one restrained national accent.
 ========================================================= */
 @theme {
   /* Brand / structure */
-  --color-ink: #0b1f38;        /* deepest navy — display headings */
-  --color-navy: #0f2747;       /* brand navy — header band, primary surfaces */
-  --color-navy-600: #1a3a60;
-  --color-navy-800: #0a1c33;
+  --color-ink: #10233d;        /* headings */
+  --color-navy: #123a63;       /* identity band, primary chrome */
+  --color-navy-600: #1c4a78;
+  --color-navy-800: #0d2a49;
 
   /* Interactive official blue */
-  --color-primary: #124c8c;
-  --color-primary-600: #0f4179;
-  --color-primary-700: #0c3563;
+  --color-primary: #1360a8;
+  --color-primary-600: #10508f;
+  --color-primary-700: #0d4176;
 
-  /* National accents (used with restraint) */
-  --color-saffron: #ff6b1f;
-  --color-saffron-600: #ea5c12;
-  --color-india: #0f7a43;      /* India green */
-  --color-india-600: #0c6838;
+  /* National accents — used only in the tricolour rule + emblem */
+  --color-saffron: #f4791f;
+  --color-saffron-600: #dd6612;
+  --color-india: #1a7f4b;
+  --color-india-600: #14683c;
 
   /* Surfaces & lines */
   --color-surface: #ffffff;
-  --color-canvas: #f3f6fb;     /* page background */
-  --color-wash: #eaf0f7;       /* inset panels */
-  --color-line: #dbe3ee;       /* default borders */
-  --color-line-strong: #c4d0e0;
-  --color-muted: #55647a;      /* secondary text */
-  --color-subtle: #7a8798;     /* tertiary text */
+  --color-canvas: #f7f9fc;     /* page background */
+  --color-wash: #eff3f8;       /* inset panels */
+  --color-line: #e4e9f1;       /* hairline borders */
+  --color-line-strong: #cfd8e4;
+  --color-muted: #56657c;      /* secondary text */
+  --color-subtle: #808ea3;     /* tertiary text */
 
   /* Risk / status system */
-  --color-safe: #157a3d;
-  --color-safe-bg: #e7f4ec;
-  --color-safe-line: #b7dcc2;
-  --color-warning: #b45309;
-  --color-warning-bg: #fbf1e0;
-  --color-warning-line: #f2d6a5;
-  --color-danger: #c1121f;
-  --color-danger-bg: #fceaec;
-  --color-danger-line: #f1bec3;
+  --color-safe: #16794a;
+  --color-safe-bg: #e9f5ee;
+  --color-safe-line: #bfe0cc;
+  --color-warning: #a65a08;
+  --color-warning-bg: #fbf1e2;
+  --color-warning-line: #f0d6ab;
+  --color-danger: #bb1622;
+  --color-danger-bg: #fbeaec;
+  --color-danger-line: #efbfc4;
 
-  /* Radii */
-  --radius-card: 14px;
+  /* Radii — crisper than before */
+  --radius-card: 10px;
 
   /* Fonts (variables set by next/font in layout.tsx) */
   --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -61,6 +63,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Root size is adjusted by the accessibility text-size control. */
+  font-size: 100%;
 }
 
 html,
@@ -88,7 +92,7 @@ button {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
   color: var(--color-ink);
 }
 
@@ -104,7 +108,7 @@ button {
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .skip-link {
@@ -115,7 +119,7 @@ button {
   background: var(--color-navy);
   color: #fff;
   padding: 10px 16px;
-  border-radius: 0 0 8px 0;
+  border-radius: 0 0 6px 0;
   font-size: 0.8125rem;
   font-weight: 600;
 }
@@ -135,7 +139,7 @@ button {
 }
 
 /* =========================================================
-   SIGNATURE — national tricolour hairline
+   SIGNATURE — national tricolour hairline (used sparingly)
 ========================================================= */
 .tricolor-strip {
   height: 3px;
@@ -158,21 +162,21 @@ button {
 }
 
 /* =========================================================
-   ANIMATIONS
+   ANIMATIONS (restrained)
 ========================================================= */
-@keyframes maarg-pulse {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-safe) 45%, transparent); }
-  70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--color-safe) 0%, transparent); }
+@keyframes maarg-ping {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-safe) 40%, transparent); }
+  70% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-safe) 0%, transparent); }
   100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-safe) 0%, transparent); }
 }
 .animate-live {
-  animation: maarg-pulse 2s infinite;
+  animation: maarg-ping 2.4s infinite;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
+  from { opacity: 0; transform: translateY(-3px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fadeIn {
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.18s ease-out forwards;
 }

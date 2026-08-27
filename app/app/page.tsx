@@ -5,59 +5,53 @@ import SectionHeader from "@/components/SectionHeader";
 import MapPlaceholder from "@/components/MapPlaceholder";
 import Icon, { type IconName } from "@/components/Icon";
 
-const ABOUT_ITEMS: { title: string; desc: string; icon: IconName }[] = [
-  { title: "Heavy rainfall", desc: "Monsoon cloudburst & flash-flood detection.", icon: "cloudRain" },
-  { title: "Landslides", desc: "AI-predicted hillside slope instability risk.", icon: "mountain" },
-  { title: "Road damage", desc: "Community & field-verified obstruction reporting.", icon: "cone" },
-  { title: "Infrastructure", desc: "Bridge loading & corridor bottleneck monitoring.", icon: "bridge" },
+const HAZARDS: { label: string; icon: IconName }[] = [
+  { label: "Heavy rainfall", icon: "cloudRain" },
+  { label: "Landslides", icon: "mountain" },
+  { label: "Road damage", icon: "cone" },
+  { label: "Bridge & infrastructure", icon: "bridge" },
 ];
 
 const CAPABILITIES: { title: string; desc: string; icon: IconName }[] = [
   {
     title: "Route intelligence",
-    desc: "AI-assisted route risk analysis and alternate recommendations, dynamically ranked by safety over speed.",
+    desc: "AI-assisted route risk analysis and alternate recommendations, ranked by safety over speed.",
     icon: "route",
   },
   {
     title: "Disruption prediction",
-    desc: "Forecasts disruptions from weather models, terrain slope, historical incident patterns, and field telemetry.",
+    desc: "Forecasts disruptions from weather models, terrain slope, historical incidents, and field telemetry.",
     icon: "barChart",
   },
   {
     title: "Logistics tracking",
-    desc: "Monitors government-assigned vehicles carrying essential medical supplies, food grains, and critical cargo.",
+    desc: "Monitors government-assigned vehicles carrying medical supplies, food grains, and critical cargo.",
     icon: "truck",
   },
   {
     title: "Incident reporting",
-    desc: "Lets authenticated drivers and field personnel report blockages with precise location tags and photographs.",
+    desc: "Lets authenticated drivers and field staff report blockages with precise location tags.",
     icon: "alertTriangle",
   },
   {
     title: "Dynamic ETA",
-    desc: "Estimates realistic arrival times accounting for gradients, weather impact, and real-time checkpoint delays.",
+    desc: "Estimates realistic arrival times accounting for gradient, weather impact, and checkpoint delays.",
     icon: "clock",
   },
   {
-    title: "Accessibility intelligence",
-    desc: "A clear overview of accessible, partially accessible, and severely disrupted transit corridors region-wide.",
+    title: "Accessibility overview",
+    desc: "A clear region-wide view of accessible, partially accessible, and disrupted transit corridors.",
     icon: "globe",
   },
 ];
 
 const WORKFLOW: { step: string; name: string; desc: string; icon: IconName }[] = [
-  { step: "01", name: "Monitor", desc: "Sensors, satellite weather & field reports", icon: "signal" },
-  { step: "02", name: "Predict", desc: "AI models analyse landslide & rainfall risk", icon: "activity" },
-  { step: "03", name: "Compare", desc: "Evaluate safety, distance & ETA per route", icon: "layers" },
+  { step: "01", name: "Monitor", desc: "Sensors, satellite weather and field reports", icon: "signal" },
+  { step: "02", name: "Predict", desc: "AI models analyse landslide and rainfall risk", icon: "activity" },
+  { step: "03", name: "Compare", desc: "Evaluate safety, distance and ETA per route", icon: "layers" },
   { step: "04", name: "Optimise", desc: "Recommend the safest path by cargo priority", icon: "route" },
-  { step: "05", name: "Track", desc: "Live GNSS tracking & milestone alerts", icon: "navigation" },
-  { step: "06", name: "Respond", desc: "Reroute trucks & dispatch emergency crews", icon: "shieldCheck" },
-];
-
-const HERO_STATS = [
-  { value: "8", unit: "States", label: "NER coverage", tone: "text-navy" },
-  { value: "94.2%", unit: "", label: "Risk accuracy", tone: "text-india" },
-  { value: "NavIC", unit: "ready", label: "GNSS / Mappls", tone: "text-primary" },
+  { step: "05", name: "Track", desc: "Live GNSS tracking and milestone alerts", icon: "navigation" },
+  { step: "06", name: "Respond", desc: "Reroute vehicles and dispatch response crews", icon: "shieldCheck" },
 ];
 
 export default function HomePage() {
@@ -67,70 +61,53 @@ export default function HomePage() {
 
       <main id="main" className="w-full flex-1">
         {/* ================= HERO ================= */}
-        <section className="relative w-full overflow-hidden border-b border-line bg-surface py-12 lg:py-16">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.45]"
-            style={{
-              backgroundImage: `linear-gradient(rgba(18,76,140,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(18,76,140,0.05) 1px, transparent 1px)`,
-              backgroundSize: "44px 44px",
-            }}
-            aria-hidden="true"
-          />
-          <div className="relative mx-auto w-full max-w-[1720px] px-4 sm:px-8 lg:px-12">
-            <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-12">
+        <section className="w-full border-b border-line bg-surface">
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-12 sm:px-8 lg:px-12 lg:py-16">
+            <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14">
               {/* Left content */}
-              <div className="space-y-6 lg:col-span-5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-safe-line bg-safe-bg px-3.5 py-1 text-xs font-semibold text-safe">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-safe" />
-                  <span>North Eastern Region Intelligence Platform</span>
-                </div>
-
-                <h1 className="text-4xl font-extrabold leading-[1.12] tracking-tight text-ink sm:text-5xl">
-                  Smarter routes.
-                  <br />
-                  Safer logistics.
-                  <br />
+              <div className="lg:col-span-5">
+                <p className="text-[12.5px] font-semibold uppercase tracking-[0.14em] text-primary">
+                  North Eastern Region intelligence platform
+                </p>
+                <h1 className="mt-3 text-[34px] font-bold leading-[1.14] tracking-tight text-ink sm:text-[44px]">
+                  Smarter routes.<br />
+                  Safer logistics.<br />
                   <span className="text-primary">Stronger connectivity.</span>
                 </h1>
-
-                <div className="tricolor-strip w-28 rounded-full" aria-hidden="true" />
-
-                <p className="max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-                  MAARG applies AI, GIS, real-time field data, and terrain
-                  intelligence to predict road risks, optimise logistics
-                  missions, and keep transport accessible across the North
-                  Eastern Region.
+                <p className="mt-5 max-w-xl text-[15.5px] leading-relaxed text-muted">
+                  MAARG applies AI, GIS, and real-time field data to predict road risks, optimise
+                  logistics missions, and keep transport accessible across the North Eastern Region.
                 </p>
 
-                <div className="flex flex-wrap gap-3.5 pt-1">
+                <div className="mt-7 flex flex-wrap gap-3">
                   <a
-                    href="#account-selection"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600"
+                    href="#choose"
+                    className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
                   >
-                    Get started
+                    Choose your portal
                     <Icon name="arrowRight" size={16} />
                   </a>
                   <a
                     href="#how-it-works"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-6 py-3.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-primary hover:text-primary"
+                    className="inline-flex items-center justify-center gap-2 rounded-md border border-line-strong bg-surface px-6 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary hover:text-primary"
                   >
-                    Explore MAARG
+                    See how it works
                   </a>
                 </div>
 
-                {/* Trust stats */}
-                <div className="grid grid-cols-3 gap-4 border-t border-line pt-6 text-center sm:text-left">
-                  {HERO_STATS.map((s) => (
-                    <div key={s.label}>
-                      <span className={`block font-mono text-xl font-bold tabular-nums sm:text-2xl ${s.tone}`}>
-                        {s.value}
-                        {s.unit && (
-                          <span className="ml-1 text-sm font-semibold text-subtle">{s.unit}</span>
-                        )}
+                {/* Hazard focus */}
+                <div className="mt-8 border-t border-line pt-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-subtle">
+                    Built to anticipate
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2.5">
+                    {HAZARDS.map((h) => (
+                      <span key={h.label} className="inline-flex items-center gap-1.5 text-[13.5px] text-muted">
+                        <Icon name={h.icon} size={16} className="text-primary" />
+                        {h.label}
                       </span>
-                      <span className="text-xs text-muted">{s.label}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -148,53 +125,73 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ================= ABOUT ================= */}
-        <section id="about" className="w-full bg-canvas py-16">
-          <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-8 lg:px-12">
+        {/* ================= CHOOSE PORTAL (prominent, high on page) ============= */}
+        <section id="choose" className="w-full border-b border-line bg-canvas">
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-16 sm:px-8 lg:px-12">
             <SectionHeader
-              badge="About MAARG"
-              title="Built for the North Eastern Region"
-              subtitle="MAARG empowers government authorities, logistics operators, drivers, and citizens to navigate difficult terrain, extreme weather, and unpredictable mountain-road disruptions."
+              badge="Get started"
+              title="Choose how you'll use MAARG"
+              subtitle="Two entry points, tailored to what you do. Select the portal that matches your role."
               centered
             />
 
-            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {ABOUT_ITEMS.map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-2xl border border-line bg-surface p-6 shadow-sm transition-all hover:border-line-strong hover:shadow-md"
-                >
-                  <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-wash text-primary">
-                    <Icon name={item.icon} size={24} />
-                  </span>
-                  <h4 className="text-base font-bold text-navy">{item.title}</h4>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted">{item.desc}</p>
-                </div>
-              ))}
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2">
+              <AccountTypeCard
+                size="lg"
+                badge="Authorised access"
+                icon="landmark"
+                title="Government / Authority"
+                description="For state transport, disaster-response, and essential-goods supply teams."
+                features={[
+                  "Create and assign logistics missions",
+                  "Register trucks, drivers and cargo priorities",
+                  "Monitor the fleet live via GNSS / NavIC",
+                  "Issue road-hazard and landslide advisories",
+                ]}
+                buttonText="Enter Government portal"
+                href="/government"
+                variant="india"
+              />
+              <AccountTypeCard
+                size="lg"
+                badge="Public & logistics"
+                icon="users"
+                title="User & Driver"
+                description="For citizens planning journeys and government-assigned drivers on active missions."
+                features={[
+                  "Check route accessibility and risk forecasts",
+                  "Plan safe civilian journeys across the NER",
+                  "Access your assigned driver mission",
+                  "Report road incidents from the field",
+                ]}
+                buttonText="Continue as User / Driver"
+                href="/user/select"
+                variant="primary"
+              />
             </div>
           </div>
         </section>
 
         {/* ================= CAPABILITIES ================= */}
-        <section className="w-full border-y border-line bg-surface py-16">
-          <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-8 lg:px-12">
+        <section id="about" className="w-full border-b border-line bg-surface">
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-16 sm:px-8 lg:px-12">
             <SectionHeader
               badge="Capabilities"
-              title="Intelligence platform capabilities"
-              subtitle="Six core pillars built to ensure uninterrupted transport of essential supplies and continuous citizen-journey safety."
+              title="What the platform does"
+              subtitle="Six core capabilities that keep essential supplies moving and journeys safe across difficult terrain."
             />
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
               {CAPABILITIES.map((feature) => (
                 <div
                   key={feature.title}
-                  className="group rounded-2xl border border-line bg-canvas p-7 shadow-sm transition-all hover:border-primary/40 hover:bg-surface hover:shadow-md"
+                  className="rounded-[10px] border border-line bg-surface p-6 transition-colors hover:border-line-strong"
                 >
-                  <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-surface text-primary shadow-sm transition-colors group-hover:border-primary/30">
-                    <Icon name={feature.icon} size={24} />
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-wash text-primary">
+                    <Icon name={feature.icon} size={22} />
                   </span>
-                  <h3 className="text-lg font-bold text-navy">{feature.title}</h3>
-                  <p className="mt-2.5 text-sm leading-relaxed text-muted">{feature.desc}</p>
+                  <h3 className="mt-4 text-[17px] font-semibold text-navy">{feature.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{feature.desc}</p>
                 </div>
               ))}
             </div>
@@ -202,64 +199,50 @@ export default function HomePage() {
         </section>
 
         {/* ================= HOW IT WORKS ================= */}
-        <section id="how-it-works" className="w-full bg-canvas py-16">
-          <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-8 lg:px-12">
+        <section id="how-it-works" className="w-full border-b border-line bg-canvas">
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-16 sm:px-8 lg:px-12">
             <SectionHeader
               badge="Workflow"
               title="How MAARG operates"
-              subtitle="An end-to-end operational pipeline that keeps logistics missions moving safely."
-              centered
+              subtitle="An end-to-end pipeline that keeps logistics missions moving safely, from monitoring to response."
             />
 
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-6">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {WORKFLOW.map((item) => (
-                <div
-                  key={item.step}
-                  className="relative rounded-2xl border border-line bg-surface p-6 text-center shadow-sm transition-all hover:border-line-strong hover:shadow-md"
-                >
-                  <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-wash text-primary">
-                    <Icon name={item.icon} size={22} />
-                  </span>
-                  <span className="mt-4 inline-block font-mono text-[11px] font-bold tabular-nums tracking-widest text-subtle">
-                    STEP {item.step}
-                  </span>
-                  <h4 className="mt-1 text-lg font-bold text-navy">{item.name}</h4>
-                  <p className="mt-1.5 text-xs leading-relaxed text-muted sm:text-sm">{item.desc}</p>
+                <div key={item.step} className="rounded-[10px] border border-line bg-surface p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-wash text-primary">
+                      <Icon name={item.icon} size={20} />
+                    </span>
+                    <span className="font-mono text-[13px] font-semibold tabular-nums text-subtle">
+                      {item.step}
+                    </span>
+                  </div>
+                  <h4 className="mt-4 text-[17px] font-semibold text-navy">{item.name}</h4>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted">{item.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ================= ACCOUNT SELECTION ================= */}
-        <section id="account-selection" className="w-full border-t border-line bg-surface py-20">
-          <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-8 lg:px-12">
-            <SectionHeader
-              badge="Get started"
-              title="How would you like to use MAARG?"
-              subtitle="Select your operational role to access dedicated tools and dashboards."
-              centered
-            />
-
-            <div className="mx-auto mt-8 grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
-              <AccountTypeCard
-                badge="Authorised portal"
-                icon="landmark"
-                title="Government / Authority"
-                description="Manage logistics missions, assign vehicles, monitor essential-goods transport, and respond to region-wide road disruptions."
-                buttonText="Continue as Government"
-                href="/government"
-                variant="india"
-              />
-              <AccountTypeCard
-                badge="Public & logistics"
-                icon="user"
-                title="User & Driver portal"
-                description="Check route accessibility, plan civilian journeys, monitor field conditions, or access assigned driver logistics missions."
-                buttonText="Continue as User"
-                href="/user/select"
-                variant="primary"
-              />
+        {/* ================= CLOSING CTA ================= */}
+        <section className="w-full bg-surface">
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-8 lg:px-12">
+            <div className="flex flex-col items-center justify-between gap-5 rounded-[10px] border border-line bg-canvas p-8 text-center sm:flex-row sm:text-left">
+              <div>
+                <h3 className="text-xl font-semibold text-navy">Ready to plan a safer route?</h3>
+                <p className="mt-1.5 text-sm text-muted">
+                  Pick your portal to check accessibility, manage missions, or report a road incident.
+                </p>
+              </div>
+              <a
+                href="#choose"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
+              >
+                Choose your portal
+                <Icon name="arrowRight" size={16} />
+              </a>
             </div>
           </div>
         </section>

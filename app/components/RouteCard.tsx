@@ -46,14 +46,14 @@ export default function RouteCard({
 
   return (
     <div
-      className={`flex flex-col rounded-[14px] border bg-surface transition-all duration-200 ${
+      className={`flex flex-col rounded-[10px] border bg-surface transition-colors ${
         isRecommended
-          ? "border-safe/60 shadow-md ring-1 ring-safe/25"
-          : "border-line shadow-sm hover:border-line-strong"
+          ? "border-safe/55 ring-1 ring-safe/20"
+          : "border-line hover:border-line-strong"
       }`}
     >
       {isRecommended && (
-        <div className="flex items-center gap-1.5 rounded-t-[14px] bg-safe-bg px-6 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-safe">
+        <div className="flex items-center gap-1.5 rounded-t-[10px] bg-safe-bg px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-safe">
           <Icon name="shieldCheck" size={14} />
           MAARG recommended route
         </div>
