@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   for (const incident of incidents) {
-    
+    // run the ML model on the incident and then save it
     
   }
 
