@@ -5,7 +5,60 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MapPlaceholder from "@/components/MapPlaceholder";
+import RouteModal, { type RouteModalData } from "@/components/RouteModal";
 import Icon from "@/components/Icon";
+
+const ROUTES_DATA: Record<string, RouteModalData> = {
+  route1: {
+    id: "route-1",
+    routeName: "Route 1 (Bhalukpong – Dirang – Tawang)",
+    status: "safe",
+    riskProbability: "18%",
+    eta: "8h 05m",
+    distance: "448 km",
+    isRecommended: true,
+    recommendationReason: "Lowest predicted disruption probability based on rainfall forecasts.",
+    riskReasons: [
+      "Optimal terrain slope gradient along the Bhalukpong highway",
+      "Clear road surface with no active landslide warnings",
+      "Stable weather window predicted for the next 12 hours",
+    ],
+    recentIncidents: [{ title: "Minor road clearance completed", time: "3 days ago" }],
+    expectedRecovery: "Fully operational · no delay expected",
+  },
+  route2: {
+    id: "route-2",
+    routeName: "Route 2 (Orang – Kalaktang Corridor)",
+    status: "medium",
+    riskProbability: "46%",
+    eta: "7h 20m",
+    distance: "412 km",
+    isRecommended: false,
+    recommendationReason: "Shorter distance but subject to moderate weather risk.",
+    riskReasons: [
+      "Moderate rainfall expected in mountain passes within 4 hours",
+      "Narrow hill section near Kalaktang prone to mudslides",
+    ],
+    recentIncidents: [{ title: "Single-lane traffic bottleneck", time: "12 hours ago" }],
+    expectedRecovery: "Approximately 6–8 hours to clear bottleneck",
+  },
+  route3: {
+    id: "route-3",
+    routeName: "Route 3 (Udalguri Direct Pass)",
+    status: "high",
+    riskProbability: "82%",
+    eta: "6h 40m",
+    distance: "385 km",
+    isRecommended: false,
+    recommendationReason: "Fastest distance, but high risk due to a recent active landslide blockage.",
+    riskReasons: [
+      "Active landslide reported 2 days ago blocking the outer lane",
+      "Severe road-disruption probability over 80%",
+    ],
+    recentIncidents: [{ title: "Active landslide reported near km 142", time: "2 days ago" }],
+    expectedRecovery: "Approximately 18–24 hours for heavy-machinery clearing",
+  },
+};
 
 interface Mission {
   missionId?: string;
@@ -61,6 +114,7 @@ export default function DriverMissionPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [truckNo, setTruckNo] = useState<string | null>(null);
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [activeRoute, setActiveRoute] = useState<RouteModalData | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -96,13 +150,6 @@ export default function DriverMissionPage() {
   const actions = (
     <div className="flex flex-wrap items-center gap-3">
       <Link
-        href="/routes"
-        className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-600"
-      >
-        <Icon name="layers" size={15} />
-        View routes
-      </Link>
-      <Link
         href="/report"
         className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:border-primary hover:text-primary"
       >
@@ -121,11 +168,7 @@ export default function DriverMissionPage() {
           {/* Header */}
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-india/20 bg-india/8 px-3 py-1 text-xs font-semibold text-india">
-                <Icon name="truck" size={13} />
-                Government logistics fleet
-              </span>
-              <h1 className="mt-3 text-[26px] font-bold tracking-tight text-ink sm:text-[32px]">
+              <h1 className="text-[26px] font-bold tracking-tight text-ink sm:text-[32px]">
                 Your assigned missions
               </h1>
               <p className="mt-1.5 text-sm text-muted">
@@ -245,14 +288,14 @@ export default function DriverMissionPage() {
                             <span className="text-[11px] font-semibold uppercase tracking-wider text-subtle">
                               From (origin)
                             </span>
-                            <p className="text-[15px] font-semibold text-ink">{primary.origin || "—"}</p>
+                            <p className="text-[15px] font-semibold text-ink">{(primary.origin || "—").toUpperCase()}</p>
                           </div>
                           <div>
                             <span className="text-[11px] font-semibold uppercase tracking-wider text-subtle">
                               To (destination)
                             </span>
                             <p className="text-[15px] font-semibold text-ink">
-                              {primary.destination || "—"}
+                              {(primary.destination || "—").toUpperCase()}
                             </p>
                           </div>
                         </div>
@@ -343,6 +386,7 @@ export default function DriverMissionPage() {
                   recommendedRouteName="Route 1"
                   recommendedRisk="18%"
                   recommendedEta="8h 05m"
+                  onRouteClick={(key) => setActiveRoute(ROUTES_DATA[key])}
                 />
               </div>
             </div>
@@ -351,6 +395,9 @@ export default function DriverMissionPage() {
       </main>
 
       <Footer />
+
+      {/* Route detail modal */}
+      <RouteModal route={activeRoute} onClose={() => setActiveRoute(null)} />
     </div>
   );
 }

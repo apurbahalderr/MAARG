@@ -6,7 +6,66 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MapPlaceholder from "@/components/MapPlaceholder";
 import RouteStatusBadge from "@/components/RouteStatusBadge";
+import RouteModal, { type RouteModalData } from "@/components/RouteModal";
 import Icon from "@/components/Icon";
+
+const ROUTES_DATA: Record<string, RouteModalData> = {
+  route1: {
+    id: "route-1",
+    routeName: "Route 1 (Bhalukpong – Dirang – Tawang)",
+    status: "safe",
+    riskProbability: "18%",
+    eta: "8h 05m",
+    distance: "448 km",
+    isRecommended: true,
+    recommendationReason: "Lowest predicted disruption probability based on rainfall forecasts and verified stable-slope telemetry.",
+    riskReasons: [
+      "Optimal terrain slope gradient along the Bhalukpong highway",
+      "Clear road surface with no active landslide warnings",
+      "Stable weather window predicted for the next 12 hours",
+    ],
+    recentIncidents: [{ title: "Minor road clearance completed", time: "3 days ago" }],
+    expectedRecovery: "Fully operational · no delay expected",
+  },
+  route2: {
+    id: "route-2",
+    routeName: "Route 2 (Orang – Kalaktang Corridor)",
+    status: "medium",
+    riskProbability: "46%",
+    eta: "7h 20m",
+    distance: "412 km",
+    isRecommended: false,
+    recommendationReason: "Shorter distance but subject to moderate weather risk and ongoing bridge-reinforcement work.",
+    riskReasons: [
+      "Moderate rainfall expected in mountain passes within 4 hours",
+      "Narrow hill section near Kalaktang prone to mudslides",
+    ],
+    recentIncidents: [
+      { title: "Heavy rainfall reported in high pass", time: "Yesterday" },
+      { title: "Single-lane traffic bottleneck", time: "12 hours ago" },
+    ],
+    expectedRecovery: "Approximately 6–8 hours to clear bottleneck",
+  },
+  route3: {
+    id: "route-3",
+    routeName: "Route 3 (Udalguri Direct Pass)",
+    status: "high",
+    riskProbability: "82%",
+    eta: "6h 40m",
+    distance: "385 km",
+    isRecommended: false,
+    recommendationReason: "Fastest distance, but high risk due to a recent active landslide blockage.",
+    riskReasons: [
+      "Active landslide reported 2 days ago blocking the outer lane",
+      "Severe road-disruption probability over 80%",
+    ],
+    recentIncidents: [
+      { title: "Active landslide reported near km 142", time: "2 days ago" },
+      { title: "Heavy torrential rainfall & debris flow", time: "Yesterday" },
+    ],
+    expectedRecovery: "Approximately 18–24 hours for heavy-machinery clearing",
+  },
+};
 
 const inputClass =
   "w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20";
@@ -22,6 +81,7 @@ export default function UserDashboardPage() {
   const [destination, setDestination] = useState("Tawang");
   const [isSearched, setIsSearched] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeRoute, setActiveRoute] = useState<RouteModalData | null>(null);
 
   const handleCheckRoute = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,16 +100,9 @@ export default function UserDashboardPage() {
         <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 lg:px-12">
           {/* Header */}
           <div className="mb-8">
-            <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-primary">
-              Civilian intelligence portal
-            </span>
-            <h1 className="mt-2 text-[26px] font-bold tracking-tight text-ink sm:text-[32px]">
+            <h1 className="text-[22px] font-bold tracking-tight text-ink sm:text-[26px]">
               Route accessibility &amp; journey planner
             </h1>
-            <p className="mt-1.5 max-w-2xl text-sm text-muted">
-              Select your origin and destination to evaluate AI risk forecasts, landslide risks, and
-              accessibility status across North East corridors.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
@@ -146,13 +199,14 @@ export default function UserDashboardPage() {
                   </div>
 
                   <div className="mt-6 flex flex-col gap-3 border-t border-line pt-5 sm:flex-row">
-                    <Link
-                      href="/routes"
+                    <button
+                      type="button"
+                      onClick={() => setActiveRoute(ROUTES_DATA.route1)}
                       className="flex flex-1 items-center justify-center gap-2 rounded-md bg-navy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-600"
                     >
                       <Icon name="layers" size={15} />
-                      View all candidate routes
-                    </Link>
+                      View route details
+                    </button>
                     <Link
                       href="/report"
                       className="flex items-center justify-center gap-2 rounded-md border border-line-strong px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:border-primary hover:text-primary"
@@ -173,6 +227,7 @@ export default function UserDashboardPage() {
                 recommendedRouteName="Route 1"
                 recommendedRisk="18%"
                 recommendedEta="8h 05m"
+                onRouteClick={(key) => setActiveRoute(ROUTES_DATA[key])}
               />
             </div>
           </div>
@@ -180,6 +235,9 @@ export default function UserDashboardPage() {
       </main>
 
       <Footer />
+
+      {/* Route detail modal */}
+      <RouteModal route={activeRoute} onClose={() => setActiveRoute(null)} />
     </div>
   );
 }
