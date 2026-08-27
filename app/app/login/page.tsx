@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Icon from "@/components/Icon";
+import { useAuth } from "@/lib/auth-context";
+
 
 const inputClass =
   "w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink transition-colors placeholder:text-subtle focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20";
@@ -13,10 +15,12 @@ const labelClass = "mb-1.5 block text-[13px] font-semibold text-navy";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,13 +44,9 @@ export default function LoginPage() {
 
       // Persist the returned profile for display; the auth token is an httpOnly cookie.
       const user = data?.user;
-      if (user && typeof window !== "undefined") {
-        try {
-          window.localStorage.setItem("maarg-user", JSON.stringify(user));
-        } catch {
-          /* storage may be unavailable — non-fatal */
-        }
-      }
+      // Update auth context so navbar immediately reflects the role
+      setUser(user ?? null);
+
 
       // Roles are derived server-side; route to the correct portal.
       const roles: string[] = Array.isArray(user?.roles) ? user.roles : [];
@@ -82,7 +82,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form card */}
-          <div className="rounded-[10px] border border-line bg-surface p-7">
+          <div className="rounded-card border border-line bg-surface p-7">
             <form onSubmit={handleLogin} className="space-y-4">
               {error && (
                 <div
