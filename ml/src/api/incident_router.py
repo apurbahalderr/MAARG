@@ -6,17 +6,15 @@ import uvicorn
 # Allow running this file directly (python src/api/incident_router.py)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from fastapi import FastAPI, APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import Optional
 
 from src.cv.verify import verify_incident_image_and_text
 from src.nlp.parser import parse_incident_text
 from src.nlp.translator import generate_multilingual_alert
 from src.news.rss_fetcher import fetch_ner_disaster_news
-from src.model1_disruption_risk.route_risk import predict_route_risk
-from src.model2_eta.route_eta import predict_route_eta
+from src.api.predictive_router import router as predictive_router
 
 app = FastAPI(title="MAARG CV/NLP/News Service")
 
@@ -29,46 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------------------------
-# Predictive models router (swarnim): disruption risk + ETA
-# ---------------------------------------------------------------------------
-
-router = APIRouter()
-
-class RouteRequest(BaseModel):
-    routes: List[Dict[str, Any]]
-
-class ETARequest(BaseModel):
-    timestamp: str
-    routes: List[Dict[str, Any]]
-
-@router.post("/risk/predict")
-async def risk_predict(request: RouteRequest):
-    try:
-        results = []
-        for route_data in request.routes:
-            res = predict_route_risk(route_data)
-            results.append(res)
-        return {"routes": results}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.post("/eta/predict")
-async def eta_predict(request: ETARequest):
-    try:
-        results = []
-        for route_data in request.routes:
-            res = predict_route_eta(route_data, request.timestamp)
-            results.append(res)
-        return {"routes": results}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-app.include_router(router)
-
-# ---------------------------------------------------------------------------
-# Incident verification (ayush): CV + NLP + multilingual alerts
-# ---------------------------------------------------------------------------
+# Predictive models (swarnim): /predict/risk, /predict/eta
+app.include_router(predictive_router)
 
 @app.post("/api/v1/incidents/report")
 def report_incident(
@@ -96,16 +56,16 @@ def report_incident(
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
             tmp.write(img_bytes)
             temp_img_path = tmp.name
-            
+
         verification_result = verify_incident_image_and_text(temp_img_path, text)
-        
+
         # Cleanup
         if os.path.exists(temp_img_path):
             os.remove(temp_img_path)
 
     # 2. NLP Extraction
     nlp_result = parse_incident_text(text)
-    
+
     # 3. Final Decision Logic
     # If image was processed and REJECTED, do not alert.
     is_rejected = verification_result.get("verification_status") == "REJECTED"
@@ -118,7 +78,7 @@ def report_incident(
     else:
         final_cause = nlp_result["cause"]
         final_severity = nlp_result["severity"]
-        
+
     alerts = {}
     if not is_rejected:
         alerts = generate_multilingual_alert(final_cause, final_severity, nlp_result["location_clue"])
