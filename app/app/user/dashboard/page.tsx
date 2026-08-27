@@ -9,9 +9,8 @@ import RouteStatusBadge from "@/components/RouteStatusBadge";
 import Icon from "@/components/Icon";
 
 const inputClass =
-  "w-full rounded-xl border border-line bg-canvas px-4 py-3 text-sm font-medium text-ink transition-all focus:border-primary focus:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25";
-const labelClass =
-  "mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted";
+  "w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20";
+const labelClass = "mb-1.5 block text-[13px] font-semibold text-navy";
 
 const LOCATIONS = [
   "Guwahati", "Tawang", "Shillong", "Tezpur", "Silchar", "Dibrugarh",
@@ -38,14 +37,13 @@ export default function UserDashboardPage() {
       <Navbar />
 
       <main id="main" className="w-full flex-1 py-8 sm:py-12">
-        <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-8 lg:px-12">
+        <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 lg:px-12">
           {/* Header */}
           <div className="mb-8">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold text-primary shadow-sm">
-              <Icon name="user" size={13} />
+            <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-primary">
               Civilian intelligence portal
             </span>
-            <h1 className="mt-2.5 text-2xl font-extrabold tracking-tight text-ink sm:text-4xl">
+            <h1 className="mt-2 text-[26px] font-bold tracking-tight text-ink sm:text-[32px]">
               Route accessibility &amp; journey planner
             </h1>
             <p className="mt-1.5 max-w-2xl text-sm text-muted">
@@ -58,8 +56,8 @@ export default function UserDashboardPage() {
             {/* Left column */}
             <div className="space-y-6 lg:col-span-5">
               {/* Journey form */}
-              <div className="rounded-2xl border border-line bg-surface p-6 shadow-sm sm:p-8">
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-navy">
+              <div className="rounded-[10px] border border-line bg-surface p-6 sm:p-7">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-navy">
                   <Icon name="navigation" size={18} className="text-primary" />
                   Plan journey route
                 </h2>
@@ -90,7 +88,7 @@ export default function UserDashboardPage() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
                   >
                     {isLoading ? (
                       <span>Evaluating terrain risk…</span>
@@ -106,26 +104,25 @@ export default function UserDashboardPage() {
 
               {/* Recommendation card */}
               {isSearched && (
-                <div className="animate-fadeIn rounded-2xl border border-line bg-surface p-6 shadow-sm sm:p-8">
+                <div className="animate-fadeIn rounded-[10px] border border-line bg-surface p-6 sm:p-7">
                   <div className="mb-4 flex items-center justify-between border-b border-line pb-4">
                     <div>
-                      <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-primary">
-                        <span className="h-[3px] w-5 rounded-full bg-saffron" />
+                      <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-primary">
                         MAARG recommendation
                       </span>
-                      <h3 className="mt-1 text-xl font-bold text-navy">Route 1 (Bhalukpong–Dirang)</h3>
+                      <h3 className="mt-1 text-lg font-bold text-navy">Route 1 (Bhalukpong–Dirang)</h3>
                     </div>
                     <RouteStatusBadge status="safe" size="md" />
                   </div>
 
                   <div className="my-4 grid grid-cols-2 gap-4">
-                    <div className="rounded-xl border border-line bg-canvas p-4">
+                    <div className="rounded-md border border-line bg-canvas p-4">
                       <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
                         <Icon name="gauge" size={13} /> Risk probability
                       </span>
                       <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-safe">18%</p>
                     </div>
-                    <div className="rounded-xl border border-line bg-canvas p-4">
+                    <div className="rounded-md border border-line bg-canvas p-4">
                       <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
                         <Icon name="clock" size={13} /> Estimated ETA
                       </span>
@@ -133,7 +130,7 @@ export default function UserDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2 rounded-xl border border-line bg-wash p-4 text-xs text-muted sm:text-sm">
+                  <div className="space-y-2 rounded-md border border-line bg-wash p-4 text-[13px] text-muted sm:text-sm">
                     <div className="flex items-center justify-between">
                       <span>Accessibility status</span>
                       <strong className="font-semibold text-safe">Fully accessible</strong>
@@ -151,14 +148,14 @@ export default function UserDashboardPage() {
                   <div className="mt-6 flex flex-col gap-3 border-t border-line pt-5 sm:flex-row">
                     <Link
                       href="/routes"
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-navy px-4 py-3 text-xs font-semibold text-white transition-colors hover:bg-navy-600 sm:text-sm"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-md bg-navy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-600"
                     >
                       <Icon name="layers" size={15} />
                       View all candidate routes
                     </Link>
                     <Link
                       href="/report"
-                      className="flex items-center justify-center gap-2 rounded-xl border border-line px-4 py-3 text-xs font-semibold text-navy transition-colors hover:border-primary hover:text-primary sm:text-sm"
+                      className="flex items-center justify-center gap-2 rounded-md border border-line-strong px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:border-primary hover:text-primary"
                     >
                       <Icon name="alertTriangle" size={15} />
                       Report disruption

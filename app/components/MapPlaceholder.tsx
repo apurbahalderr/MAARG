@@ -14,9 +14,9 @@ interface MapPlaceholderProps {
 type RouteKey = "route1" | "route2" | "route3";
 
 const ROUTE_HEX = {
-  safe: "#157a3d",
-  warning: "#b45309",
-  danger: "#c1121f",
+  safe: "#16794a",
+  warning: "#a65a08",
+  danger: "#bb1622",
 };
 
 const ROUTE_META: Record<
@@ -43,15 +43,15 @@ export default function MapPlaceholder({
   const tone = TONE_CLASSES[meta.tone];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+    <div className="relative overflow-hidden rounded-[10px] border border-line bg-surface">
       {/* Map Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-surface px-5 py-4">
         <div>
-          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-primary">
+          <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
             <Icon name="navigation" size={13} />
             Live route intelligence
           </span>
-          <h3 className="mt-0.5 text-lg font-bold text-navy">
+          <h3 className="mt-0.5 text-lg font-semibold text-navy">
             Accessibility map · {origin} to {destination}
           </h3>
         </div>
@@ -63,7 +63,7 @@ export default function MapPlaceholder({
           </div>
           <div className="hidden items-center gap-1.5 rounded-md border border-line bg-canvas px-2.5 py-1 text-xs font-medium text-subtle sm:flex">
             <Icon name="layers" size={13} />
-            Mappls API placeholder
+            Mappls preview
           </div>
         </div>
       </div>
@@ -127,36 +127,30 @@ export default function MapPlaceholder({
 
         {/* Origin Marker */}
         <div className="absolute bottom-[20%] left-[12%] z-10 flex flex-col items-center sm:bottom-[22%] sm:left-[14%]">
-          <div className="relative flex items-center justify-center">
-            <span className="absolute h-8 w-8 animate-ping rounded-full bg-primary/20" />
-            <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-md">
-              <Icon name="mapPin" size={15} />
-            </span>
-          </div>
-          <div className="mt-2 rounded-lg border border-line bg-surface/95 px-2.5 py-1 text-xs font-bold text-navy shadow-sm backdrop-blur">
+          <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow-sm">
+            <Icon name="mapPin" size={15} />
+          </span>
+          <div className="mt-2 rounded-md border border-line bg-surface/95 px-2.5 py-1 text-xs font-semibold text-navy shadow-sm backdrop-blur">
             {origin}
           </div>
         </div>
 
         {/* Destination Marker */}
         <div className="absolute right-[12%] top-[18%] z-10 flex flex-col items-center sm:right-[15%] sm:top-[20%]">
-          <div className="relative flex items-center justify-center">
-            <span className="absolute h-8 w-8 animate-ping rounded-full bg-saffron/25" />
-            <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-saffron text-white shadow-md">
-              <Icon name="flag" size={14} />
-            </span>
-          </div>
-          <div className="mt-2 rounded-lg border border-line bg-surface/95 px-2.5 py-1 text-xs font-bold text-navy shadow-sm backdrop-blur">
+          <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-saffron text-white shadow-sm">
+            <Icon name="flag" size={14} />
+          </span>
+          <div className="mt-2 rounded-md border border-line bg-surface/95 px-2.5 py-1 text-xs font-semibold text-navy shadow-sm backdrop-blur">
             {destination}
           </div>
         </div>
 
         {/* Live Truck Marker */}
         <div className="absolute left-[44%] top-[45%] z-20 flex flex-col items-center transition-all">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-primary bg-surface text-primary shadow-lg ring-4 ring-primary/15">
-            <Icon name="truck" size={20} />
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary bg-surface text-primary shadow-sm ring-4 ring-primary/10">
+            <Icon name="truck" size={19} />
           </span>
-          <div className="mt-1 rounded-md border border-primary/30 bg-navy px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-white shadow-md">
+          <div className="mt-1 rounded border border-primary/25 bg-navy px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-white">
             AS01AB1234
           </div>
         </div>
@@ -171,7 +165,7 @@ export default function MapPlaceholder({
         <div className="absolute left-4 top-4 z-20 w-48 rounded-xl border border-line bg-surface/95 p-3.5 shadow-md backdrop-blur sm:w-56">
           <div className="mb-2 flex items-center justify-between border-b border-line pb-2">
             <span className="text-xs font-bold text-navy">{meta.label}</span>
-            <span className={`inline-flex items-center gap-1 text-[11px] font-extrabold uppercase ${tone.text}`}>
+            <span className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase ${tone.text}`}>
               <span className={`h-2 w-2 rounded-full ${tone.dot}`} />
               {meta.tone === "safe" ? "Safe" : meta.tone === "warning" ? "Medium" : "High"}
             </span>

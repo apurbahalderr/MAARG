@@ -76,9 +76,9 @@ export default function RoutesPage() {
       <Navbar />
 
       <main id="main" className="w-full flex-1 py-10 sm:py-14">
-        <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-8 lg:px-12">
+        <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-8 lg:px-12">
           {/* Breadcrumb */}
-          <nav className="mb-6 flex items-center gap-2 text-xs text-muted" aria-label="Breadcrumb">
+          <nav className="mb-6 flex items-center gap-2 text-[13px] text-muted" aria-label="Breadcrumb">
             <Link href="/" className="transition-colors hover:text-primary">
               Home
             </Link>
@@ -93,13 +93,13 @@ export default function RoutesPage() {
           />
 
           {/* Routing principle banner */}
-          <div className="mb-8 flex items-start gap-4 rounded-2xl border border-primary/25 bg-primary/5 p-6">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
+          <div className="mb-8 flex items-start gap-4 rounded-[10px] border border-primary/20 bg-primary/5 p-6">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
               <Icon name="lightbulb" size={22} />
             </span>
             <div>
-              <h4 className="text-base font-bold text-navy">Key MAARG routing principle</h4>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted sm:text-sm">
+              <h4 className="text-base font-semibold text-navy">Key MAARG routing principle</h4>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-muted sm:text-sm">
                 Note that <strong className="text-ink">Route 3 is the fastest</strong> (6h 40m) but
                 carries an <strong className="text-danger">82% high-risk</strong> disruption
                 probability. MAARG recommends <strong className="text-ink">Route 1 (8h 05m)</strong>{" "}
@@ -110,26 +110,26 @@ export default function RoutesPage() {
           </div>
 
           {/* Route cards */}
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {routesData.map((route) => (
               <RouteCard key={route.id} {...route} />
             ))}
           </div>
 
           {/* Report link */}
-          <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-line bg-surface p-8 text-center shadow-sm">
-            <span className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-wash text-saffron-600">
+          <div className="mx-auto mt-10 max-w-2xl rounded-[10px] border border-line bg-surface p-8 text-center">
+            <span className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-wash text-saffron-600">
               <Icon name="alertTriangle" size={22} />
             </span>
-            <h4 className="text-base font-bold text-navy">Noticed a new hazard on your route?</h4>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted sm:text-sm">
-              Help keep North East routes safe by submitting an official field report with photos
-              and GPS tags.
+            <h4 className="text-base font-semibold text-navy">Noticed a new hazard on your route?</h4>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-muted sm:text-sm">
+              Help keep North East routes safe by submitting an official field report with a precise
+              location tag.
             </p>
             <div className="mt-5">
               <Link
                 href="/report"
-                className="inline-flex items-center gap-2 rounded-xl bg-india px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-india-600"
+                className="inline-flex items-center gap-2 rounded-md bg-india px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-india-600"
               >
                 <span>Report an incident now</span>
                 <Icon name="arrowRight" size={16} />
