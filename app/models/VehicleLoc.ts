@@ -68,9 +68,9 @@ vehicleLocationSchema.index({
   timestamp: -1,
 });
 
-export const VehicleLocation =
-  mongoose.models.VehicleLocation ||
+export const VehicleLoc =
+  mongoose.models.VehicleLoc ||
   mongoose.model<IVehicleLocation>(
-    "VehicleLocation",
+    "VehicleLoc",
     vehicleLocationSchema
   );

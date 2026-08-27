@@ -15,10 +15,12 @@ if (!MAPPLS_KEY) {
 
 const {origin, dest} = req;
 
+// fetches 3 alternative routes  
 const url =
   `https://route.mappls.com/route/direction/` +
   `route_adv/trucking/${origin};${dest}` +
   `?geometries=geojson` +
+  `alternatives=3`+
   `&steps=true` +
   `&access_token=${MAPPLS_KEY}`;
 

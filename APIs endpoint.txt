@@ -6,3 +6,12 @@ POST - admins create a new mission for supply transport
 /missions/my-mission
 GET - fetches the active mission based on the truck no of the driver
 
+/missions/[id]
+GET - get the mission data based on missionId
+
+/incidents
+POST - report an incident from the frontend
+
+/truck/[truckNo]
+POST - update the vehicle location based on truck number
+GET - get the vehicle location based on truck number
