@@ -9,6 +9,8 @@ interface MapPlaceholderProps {
   recommendedRouteName?: string;
   recommendedRisk?: string;
   recommendedEta?: string;
+  /** Called with "route1" | "route2" | "route3" when user clicks a route in the toggle panel */
+  onRouteClick?: (routeKey: "route1" | "route2" | "route3") => void;
 }
 
 type RouteKey = "route1" | "route2" | "route3";
@@ -37,6 +39,7 @@ const TONE_CLASSES = {
 export default function MapPlaceholder({
   origin = "Guwahati",
   destination = "Tawang",
+  onRouteClick,
 }: MapPlaceholderProps) {
   const [selectedRoute, setSelectedRoute] = useState<RouteKey>("route1");
   const meta = ROUTE_META[selectedRoute];
@@ -54,17 +57,6 @@ export default function MapPlaceholder({
           <h3 className="mt-0.5 text-lg font-semibold text-navy">
             Accessibility map · {origin} to {destination}
           </h3>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1.5 rounded-full border border-safe-line bg-safe-bg px-3 py-1 text-xs font-semibold text-safe">
-            <span className="h-2 w-2 rounded-full bg-safe animate-pulse" />
-            <span>Live GNSS active</span>
-          </div>
-          <div className="hidden items-center gap-1.5 rounded-md border border-line bg-canvas px-2.5 py-1 text-xs font-medium text-subtle sm:flex">
-            <Icon name="layers" size={13} />
-            Mappls preview
-          </div>
         </div>
       </div>
 
@@ -187,8 +179,8 @@ export default function MapPlaceholder({
           </div>
         </div>
 
-        {/* Route Selector */}
-        <div className="absolute right-4 top-4 z-20 flex flex-col gap-1.5 rounded-xl border border-line bg-surface/90 p-2 shadow-md backdrop-blur">
+        {/* Route Selector — bottom-right */}
+        <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-1.5 rounded-xl border border-line bg-surface/90 p-2 shadow-md backdrop-blur">
           <span className="px-1 text-[10px] font-bold uppercase tracking-wider text-subtle">
             Toggle map view
           </span>
@@ -200,7 +192,10 @@ export default function MapPlaceholder({
               <button
                 key={key}
                 type="button"
-                onClick={() => setSelectedRoute(key)}
+                onClick={() => {
+                  setSelectedRoute(key);
+                  onRouteClick?.(key);
+                }}
                 className={`flex items-center justify-between gap-3 rounded-md px-2.5 py-1 text-left text-xs font-semibold transition-colors ${
                   active ? `border ${rt.chip}` : "text-muted hover:bg-canvas"
                 }`}
@@ -210,27 +205,6 @@ export default function MapPlaceholder({
               </button>
             );
           })}
-        </div>
-
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 z-20 rounded-xl border border-line bg-surface/95 p-3 shadow-md backdrop-blur">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-subtle">
-            Operational legend
-          </p>
-          <div className="space-y-1.5 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-safe" />
-              <span className="font-semibold text-safe">Safe (recommended)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-warning" />
-              <span className="font-semibold text-warning">Medium risk</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-danger" />
-              <span className="font-semibold text-danger">High risk (disrupted)</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
