@@ -17,8 +17,6 @@ interface NavLink {
 
 const NAV_LINKS: NavLink[] = [
   { href: "/", label: "Home", icon: "navigation", exact: true },
-  { href: "/#about", label: "About", icon: "info" },
-  { href: "/#how-it-works", label: "How it works", icon: "layers" },
   { href: "/user/dashboard", label: "Route planner", icon: "gauge", match: "/user" },
   { href: "/your-mission", label: "Driver mission", icon: "truck", match: "/your-mission" },
   { href: "/routes", label: "Routes", icon: "route", match: "/routes" },
