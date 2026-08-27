@@ -5,6 +5,8 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Icon from "@/components/Icon";
+import { useAuth } from "@/lib/auth-context";
+
 
 /* ── Nominatim place-search types ── */
 interface NominatimResult {
@@ -59,6 +61,7 @@ const SEVERITIES: { value: string; label: string }[] = [
 ];
 
 export default function ReportPage() {
+  const { truckNo: driverTruckNo, isDriver } = useAuth();
   const [type, setType] = useState("LANDSLIDE");
   const [severity, setSeverity] = useState("MEDIUM");
   const [lat, setLat] = useState("");
@@ -68,6 +71,14 @@ export default function ReportPage() {
   const [occurredAt, setOccurredAt] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  // Pre-fill truck number for drivers
+  useEffect(() => {
+    if (isDriver && driverTruckNo) {
+      setTruckNo(driverTruckNo);
+    }
+  }, [isDriver, driverTruckNo]);
+
 
   /* ── Place search ── */
   const [placeQuery, setPlaceQuery] = useState("");
@@ -280,10 +291,10 @@ export default function ReportPage() {
 
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <Link
-                    href="/routes"
+                    href="/user/dashboard"
                     className="inline-flex items-center gap-1.5 rounded-md bg-navy px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-600"
                   >
-                    View route forecasts
+                    View route planner
                     <Icon name="arrowRight" size={15} />
                   </Link>
                   <button

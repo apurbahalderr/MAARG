@@ -1,38 +1,33 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Public_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
-const publicSans = Public_Sans({
-  variable: "--font-public-sans",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "MAARG — Smart Logistics & Accessibility Intelligence Platform",
   description:
-    "AI-based smart logistics and road-accessibility intelligence platform for the North Eastern Region of India. Team Golden Arrows · SIH 2026.",
+    "AI-Based Smart Logistics and Accessibility Intelligence Platform for the North Eastern Region of India. Team Golden Arrows · SIH 2026.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${publicSans.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full m-0 flex w-full flex-col bg-canvas font-sans text-ink antialiased">
-        <a href="#main" className="skip-link">
-          Skip to main content
-        </a>
-        {children}
+      <body className="min-h-full flex flex-col w-full bg-[#F7F9FC] text-[#111827] antialiased m-0 p-0">
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
