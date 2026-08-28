@@ -107,6 +107,9 @@ export default function GovernmentPage() {
 
   // Mission form state
   const [truckNo, setTruckNo] = useState("");
+  interface AvailableTruck { truckNo: string; driverName: string; status: string; }
+  const [availableTrucks, setAvailableTrucks] = useState<AvailableTruck[]>([]);
+  const [trucksLoading, setTrucksLoading] = useState(false);
   const [cargoType, setCargoType] = useState("MEDICAL");
   const [cargoQuantity, setCargoQuantity] = useState("");
   const [origin, setOrigin] = useState("");
@@ -220,6 +223,19 @@ export default function GovernmentPage() {
     if (!isAdmin) return;
     if (activeTab === "missions" || activeTab === "fleet") {
       fetchMissions();
+    }
+    // Fetch available trucks when "create" tab is active
+    if (activeTab === "create" && availableTrucks.length === 0) {
+      setTrucksLoading(true);
+      fetch("/api/trucks")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.trucks)) {
+            setAvailableTrucks(data.trucks);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setTrucksLoading(false));
     }
   }, [activeTab, isAdmin, fetchMissions]);
 
@@ -398,7 +414,23 @@ export default function GovernmentPage() {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div>
                             <label htmlFor="truckNo" className={labelClass}>Truck number</label>
-                            <input id="truckNo" type="text" value={truckNo} onChange={(e) => setTruckNo(e.target.value)} placeholder="AS01AB1234" className={`${inputClass} uppercase`} required />
+                            {trucksLoading ? (
+                              <div className={`${inputClass} flex items-center gap-2 text-subtle`}>
+                                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                                Loading trucks…
+                              </div>
+                            ) : availableTrucks.length > 0 ? (
+                              <select id="truckNo" value={truckNo} onChange={(e) => setTruckNo(e.target.value)} className={inputClass} required>
+                                <option value="">Select a truck</option>
+                                {availableTrucks.map((t) => (
+                                  <option key={t.truckNo} value={t.truckNo} disabled={t.status === "on_mission"}>
+                                    {t.truckNo} — {t.driverName} {t.status === "available" ? "✅" : t.status === "on_mission" ? "🔴 On mission" : "⚫ Off duty"}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input id="truckNo" type="text" value={truckNo} onChange={(e) => setTruckNo(e.target.value)} placeholder="AS01AB1234" className={`${inputClass} uppercase`} required />
+                            )}
                           </div>
                           <div>
                             <label htmlFor="cargoType" className={labelClass}>Cargo type</label>

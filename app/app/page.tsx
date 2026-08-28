@@ -49,14 +49,45 @@ const CAPABILITIES: { title: string; desc: string; icon: IconName }[] = [
   },
 ];
 
-const WORKFLOW: { step: string; name: string; desc: string; icon: IconName }[] = [
-  { step: "01", name: "Monitor", desc: "Sensors, satellite weather and field reports", icon: "signal" },
-  { step: "02", name: "Predict", desc: "AI models analyse landslide and rainfall risk", icon: "activity" },
-  { step: "03", name: "Compare", desc: "Evaluate safety, distance and ETA per route", icon: "layers" },
-  { step: "04", name: "Optimise", desc: "Recommend the safest path by cargo priority", icon: "route" },
-  { step: "05", name: "Track", desc: "Live GNSS tracking and milestone alerts", icon: "navigation" },
-  { step: "06", name: "Respond", desc: "Reroute vehicles and dispatch response crews", icon: "shieldCheck" },
-];
+const WORKFLOW: { step: string; name: string; desc: string; icon: IconName }[] =
+  [
+    {
+      step: "01",
+      name: "Monitor",
+      desc: "Sensors, satellite weather and field reports",
+      icon: "signal",
+    },
+    {
+      step: "02",
+      name: "Predict",
+      desc: "AI models analyse landslide and rainfall risk",
+      icon: "activity",
+    },
+    {
+      step: "03",
+      name: "Compare",
+      desc: "Evaluate safety, distance and ETA per route",
+      icon: "layers",
+    },
+    {
+      step: "04",
+      name: "Optimise",
+      desc: "Recommend the safest path by cargo priority",
+      icon: "route",
+    },
+    {
+      step: "05",
+      name: "Track",
+      desc: "Live GNSS tracking and milestone alerts",
+      icon: "navigation",
+    },
+    {
+      step: "06",
+      name: "Respond",
+      desc: "Reroute vehicles and dispatch response crews",
+      icon: "shieldCheck",
+    },
+  ];
 
 export default function HomePage() {
   const { isLoggedIn, isAdmin, isDriver, isUser } = useAuth();
@@ -77,13 +108,16 @@ export default function HomePage() {
                   North Eastern Region intelligence platform
                 </p>
                 <h1 className="mt-3 text-[34px] font-bold leading-[1.14] tracking-tight text-ink sm:text-[44px]">
-                  Smarter routes.<br />
-                  Safer logistics.<br />
+                  Smarter routes.
+                  <br />
+                  Safer logistics.
+                  <br />
                   <span className="text-primary">Stronger connectivity.</span>
                 </h1>
                 <p className="mt-5 max-w-xl text-[15.5px] leading-relaxed text-muted">
-                  MAARG applies AI, GIS, and real-time field data to predict road risks, optimise
-                  logistics missions, and keep transport accessible across the North Eastern Region.
+                  MAARG applies AI, GIS, and real-time field data to predict
+                  road risks, optimise logistics missions, and keep transport
+                  accessible across the North Eastern Region.
                 </p>
 
                 <div className="mt-7 flex flex-wrap gap-3">
@@ -109,8 +143,15 @@ export default function HomePage() {
                   </p>
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2.5">
                     {HAZARDS.map((h) => (
-                      <span key={h.label} className="inline-flex items-center gap-1.5 text-[13.5px] text-muted">
-                        <Icon name={h.icon} size={16} className="text-primary" />
+                      <span
+                        key={h.label}
+                        className="inline-flex items-center gap-1.5 text-[13.5px] text-muted"
+                      >
+                        <Icon
+                          name={h.icon}
+                          size={16}
+                          className="text-primary"
+                        />
                         {h.label}
                       </span>
                     ))}
@@ -134,7 +175,10 @@ export default function HomePage() {
 
         {/* ================= CHOOSE PORTAL (prominent, high on page) ============= */}
         {(!isClient || !isLoggedIn) && (
-          <section id="choose" className="w-full border-b border-line bg-canvas">
+          <section
+            id="choose"
+            className="w-full border-b border-line bg-canvas"
+          >
             <div className="mx-auto w-full max-w-[1600px] px-4 py-16 sm:px-8 lg:px-12">
               <SectionHeader
                 badge="Get started"
@@ -182,7 +226,10 @@ export default function HomePage() {
         )}
 
         {isClient && isLoggedIn && (
-          <section id="choose" className="w-full border-b border-line bg-canvas">
+          <section
+            id="choose"
+            className="w-full border-b border-line bg-canvas"
+          >
             <div className="mx-auto w-full max-w-[1600px] px-4 py-12 sm:px-8 lg:px-12">
               <SectionHeader
                 badge="Welcome back"
@@ -192,21 +239,33 @@ export default function HomePage() {
               />
               <div className="mx-auto flex max-w-2xl flex-wrap justify-center gap-4">
                 {isAdmin && (
-                  <a href="/government" className="inline-flex items-center gap-2 rounded-md bg-india px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-india-600">
+                  <a
+                    href="/government"
+                    className="inline-flex items-center gap-2 rounded-md bg-india px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-india-600"
+                  >
                     <Icon name="landmark" size={16} /> Government Dashboard
                   </a>
                 )}
                 {isDriver && (
-                  <a href="/your-mission" className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600">
+                  <a
+                    href="/your-mission"
+                    className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
+                  >
                     <Icon name="truck" size={16} /> Your Mission
                   </a>
                 )}
                 {isUser && (
-                  <a href="/user/dashboard" className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600">
+                  <a
+                    href="/user/dashboard"
+                    className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
+                  >
                     <Icon name="route" size={16} /> Route Planner
                   </a>
                 )}
-                <a href="/report" className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-6 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary hover:text-primary">
+                <a
+                  href="/report"
+                  className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-6 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary hover:text-primary"
+                >
                   <Icon name="alertTriangle" size={16} /> Report Incident
                 </a>
               </div>
@@ -232,8 +291,12 @@ export default function HomePage() {
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-wash text-primary">
                     <Icon name={feature.icon} size={22} />
                   </span>
-                  <h3 className="mt-4 text-[17px] font-semibold text-navy">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{feature.desc}</p>
+                  <h3 className="mt-4 text-[17px] font-semibold text-navy">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">
+                    {feature.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -241,7 +304,10 @@ export default function HomePage() {
         </section>
 
         {/* ================= HOW IT WORKS ================= */}
-        <section id="how-it-works" className="w-full border-b border-line bg-canvas">
+        <section
+          id="how-it-works"
+          className="w-full border-b border-line bg-canvas"
+        >
           <div className="mx-auto w-full max-w-[1600px] px-4 py-16 sm:px-8 lg:px-12">
             <SectionHeader
               badge="Workflow"
@@ -251,7 +317,10 @@ export default function HomePage() {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {WORKFLOW.map((item) => (
-                <div key={item.step} className="rounded-[10px] border border-line bg-surface p-6">
+                <div
+                  key={item.step}
+                  className="rounded-[10px] border border-line bg-surface p-6"
+                >
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-wash text-primary">
                       <Icon name={item.icon} size={20} />
@@ -260,8 +329,12 @@ export default function HomePage() {
                       {item.step}
                     </span>
                   </div>
-                  <h4 className="mt-4 text-[17px] font-semibold text-navy">{item.name}</h4>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted">{item.desc}</p>
+                  <h4 className="mt-4 text-[17px] font-semibold text-navy">
+                    {item.name}
+                  </h4>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                    {item.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -274,9 +347,12 @@ export default function HomePage() {
             <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-8 lg:px-12">
               <div className="flex flex-col items-center justify-between gap-5 rounded-[10px] border border-line bg-canvas p-8 text-center sm:flex-row sm:text-left">
                 <div>
-                  <h3 className="text-xl font-semibold text-navy">Ready to plan a safer route?</h3>
+                  <h3 className="text-xl font-semibold text-navy">
+                    Ready to plan a safer route?
+                  </h3>
                   <p className="mt-1.5 text-sm text-muted">
-                    Pick your portal to check accessibility, manage missions, or report a road incident.
+                    Pick your portal to check accessibility, manage missions, or
+                    report a road incident.
                   </p>
                 </div>
                 <a
