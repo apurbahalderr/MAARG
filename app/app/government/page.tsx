@@ -196,7 +196,7 @@ export default function GovernmentPage() {
         const d = await res.json();
         if (!d.success || !d.data) return null;
         const mission = activeMissions.find((m) => m.truckNo === tn);
-        
+
         const loc = d.data.location;
         const lat = loc?.coordinates?.[1] ?? d.data.lat;
         const lng = loc?.coordinates?.[0] ?? d.data.lng;
@@ -214,16 +214,7 @@ export default function GovernmentPage() {
       .map((r) => r.value)
       .filter((t): t is FleetTruck => t !== null);
 
-    if (trucks.length === 0) {
-      // Demo truck positions for demonstration
-      setFleetTrucks([
-        { truckNo: "AS01AB1234", lat: 26.5535, lng: 92.0206, missionId: "M-2026-0042" },
-        { truckNo: "AS02CD5678", lat: 27.4712, lng: 94.9120, missionId: "M-2026-0043" },
-        { truckNo: "AS03EF9012", lat: 25.5788, lng: 91.8933, missionId: "M-2026-0041" },
-      ]);
-    } else {
-      setFleetTrucks(trucks);
-    }
+    setFleetTrucks(trucks);
   }, []);
 
   // Load missions when "missions" or "fleet" tab becomes active
@@ -645,7 +636,7 @@ export default function GovernmentPage() {
                   {/* Right: live map preview — empty until Choose route */}
                   <div className="lg:col-span-7">
                     {!fetchedRoutes ? (
-                      <div className="flex h-[580px] w-full flex-col items-center justify-center rounded-card border border-dashed border-line bg-canvas p-8 text-center">
+                      <div className="flex h-145 w-full flex-col items-center justify-center rounded-card border border-dashed border-line bg-canvas p-8 text-center">
                         <Icon name="mapPin" size={28} className="text-subtle" />
                         <p className="mt-3 text-sm font-semibold text-navy">No route preview yet</p>
                         <p className="mt-1 max-w-sm text-[13px] text-muted">Search origin & destination via Mappls, then click <strong>Choose route</strong> to fetch alternatives. Map will appear here.</p>
