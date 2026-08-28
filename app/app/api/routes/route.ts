@@ -68,7 +68,7 @@ async function scoreRoutesWithML(
     durationSeconds: number;
     coordCount: number;
   }>,
-): Promise<number[]> {
+): Promise<Array<{ route_id: string; disruption_risk: number; risk_band: string }>> {
   // Build payload: ~5 segments per route for performance
   const SEGMENTS_PER_ROUTE = 5;
   const mlPayload = {
@@ -86,27 +86,42 @@ async function scoreRoutesWithML(
     })),
   };
 
+  // console.log("mlPayload: " + JSON.stringify(mlPayload));
+
   try {
     const res = await fetch(`${ML_API_URL}/predict/risk`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(mlPayload),
-      signal: AbortSignal.timeout(5000), // 5s timeout
+      signal: AbortSignal.timeout(20000), // 20s timeout
     });
     if (!res.ok) throw new Error(`ML returned ${res.status}`);
     const data = await res.json();
+    console.log(data)
     // data.routes[i].disruption_risk is in [0,1]
-    return (data.routes as Array<{ disruption_risk: number }>).map((r) =>
-      Math.round(r.disruption_risk * 100),
-    );
+
+    return data.routes.map((r: any) => ({
+      route_id: r.route_id,
+      disruption_risk: Math.round(r.disruption_risk * 100),
+      risk_band: r.risk_band,
+    }));
+
+
   } catch (err) {
     console.warn(
       "[/api/routes] ML API unavailable, using placeholder scores:",
       err,
     );
-    // Fallback: safest route first
-    return routes.map((_, i) => [18, 46, 82][i] ?? 50);
+    // Fallback: safest route first — return same shape as ML success
+    const fallback = [18, 46, 82];
+    return routes.map((r, i) => ({
+      route_id: r.route_id,
+      disruption_risk: fallback[i] ?? 50,
+      risk_band: fallback[i] !== undefined ? (fallback[i] <= 30 ? "LOW" : fallback[i] <= 60 ? "MODERATE" : "HIGH") : "MODERATE",
+    }));
   }
+
+
 }
 
 function classifyRisk(score: number): {
@@ -118,6 +133,8 @@ function classifyRisk(score: number): {
   return { level: "HIGH", color: "#ef4444" };
 }
 
+
+// send the actual incident reasons to the frontend so that it can be displayed in the UI
 function riskReasons(risk: "LOW" | "MEDIUM" | "HIGH", index: number): string[] {
   if (risk === "LOW")
     return [
@@ -148,8 +165,9 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
+  // console.log(searchParams)
   const origin = searchParams.get("origin");
-  const dest = searchParams.get("dest");
+  const dest = searchParams.get("dest") ?? searchParams.get("destination");
 
   if (!origin || !dest) {
     return NextResponse.json(
@@ -162,7 +180,7 @@ export async function GET(req: Request) {
   const mapplsUrl =
     `https://route.mappls.com/route/direction/` +
     `route_adv/trucking/${origin};${dest}` +
-    `?geometries=geojson&overview=full&alternatives=true&steps=false` +
+    `?geometries=geojson&overview=full&alternatives=3&steps=false` +
     `&access_token=${MAPPLS_KEY}`;
 
   let rawRoutes: Array<{
@@ -172,8 +190,15 @@ export async function GET(req: Request) {
   }> = [];
 
   try {
+
+    // console.log(mapplsUrl)
+
     const mapplsRes = await fetch(mapplsUrl);
     const mapplsData = await mapplsRes.json();
+
+
+    // console.log("mapplsData: " + JSON.stringify(mapplsData));
+
     if (mapplsRes.ok && Array.isArray(mapplsData.routes)) {
       rawRoutes = mapplsData.routes;
     }
@@ -182,47 +207,50 @@ export async function GET(req: Request) {
   }
 
   // ── Fallback mock geometry if Mappls returns nothing ──────────────────────
-  const isMock = rawRoutes.length === 0;
-  if (isMock) {
-    const [originLng, originLat] = origin.split(",").map(Number);
-    const [destLng, destLat] = dest.split(",").map(Number);
-    rawRoutes = [
-      {
-        geometry: {
-          coordinates: [
-            [originLng, originLat],
-            [destLng, destLat],
-          ],
-        },
-        distance: 420000,
-        duration: 29400,
-      },
-      {
-        geometry: {
-          coordinates: [
-            [originLng, originLat],
-            [(originLng + destLng) / 2 + 0.1, (originLat + destLat) / 2],
-            [destLng, destLat],
-          ],
-        },
-        distance: 395000,
-        duration: 27000,
-      },
-      {
-        geometry: {
-          coordinates: [
-            [originLng, originLat],
-            [(originLng + destLng) / 2 - 0.1, (originLat + destLat) / 2],
-            [destLng, destLat],
-          ],
-        },
-        distance: 370000,
-        duration: 25200,
-      },
-    ];
-  }
+  // const isMock = rawRoutes.length === 0;
+  // if (isMock) {
+  //   const [originLng, originLat] = origin.split(",").map(Number);
+  //   const [destLng, destLat] = dest.split(",").map(Number);
+  //   rawRoutes = [
+  //     {
+  //       geometry: {
+  //         coordinates: [
+  //           [originLng, originLat],
+  //           [destLng, destLat],
+  //         ],
+  //       },
+  //       distance: 420000,
+  //       duration: 29400,
+  //     },
+  //     {
+  //       geometry: {
+  //         coordinates: [
+  //           [originLng, originLat],
+  //           [(originLng + destLng) / 2 + 0.1, (originLat + destLat) / 2],
+  //           [destLng, destLat],
+  //         ],
+  //       },
+  //       distance: 395000,
+  //       duration: 27000,
+  //     },
+  //     {
+  //       geometry: {
+  //         coordinates: [
+  //           [originLng, originLat],
+  //           [(originLng + destLng) / 2 - 0.1, (originLat + destLat) / 2],
+  //           [destLng, destLat],
+  //         ],
+  //       },
+  //       distance: 370000,
+  //       duration: 25200,
+  //     },
+  //   ];
+  // }
 
   // ── Score via ML ──────────────────────────────────────────────────────────
+
+  // console.log("rawRoutes: " + JSON.stringify(rawRoutes));
+
   const mlInput = rawRoutes.map((r, i) => ({
     route_id: `route_${i + 1}`,
     distKm: r.distance / 1000,
@@ -230,25 +258,37 @@ export async function GET(req: Request) {
     coordCount: r.geometry.coordinates.length,
   }));
 
-  const riskScores = await scoreRoutesWithML(mlInput);
+  // console.log(mlInput)
 
-  // Sort so lowest risk is route 1 (recommended)
+  const scored = await scoreRoutesWithML(mlInput);
+
+  console.log(scored)
+
+  // Sort so lowest risk is route 1 (recommended) — use disruption_risk numeric
   const indexed = rawRoutes.map((r, i) => ({
     r,
-    score: riskScores[i] ?? 50,
+    scored: scored[i] ?? { route_id: `route_${i + 1}`, disruption_risk: 50, risk_band: "MODERATE" },
     i,
   }));
-  indexed.sort((a, b) => a.score - b.score);
+  indexed.sort((a, b) => a.scored.disruption_risk - b.scored.disruption_risk);
 
-  const routes = indexed.map(({ r, score }, rankIdx) => {
+  const routes = indexed.map(({ r, scored: s }, rankIdx) => {
+    const score = s.disruption_risk;
     const risk = classifyRisk(score);
+    // DB-compatible fields + UI fields — riskBand from ML if available else derived
+    const mlBand = s.risk_band as string | undefined;
+    const dbBand = mlBand && ["LOW","MODERATE","HIGH","CRITICAL"].includes(mlBand) ? mlBand : (risk.level === "MEDIUM" ? "MODERATE" : risk.level);
     return {
       id: `route_${rankIdx + 1}`,
       coordinates: r.geometry.coordinates,
+      geometry: r.geometry, // for direct /api/gov/choose-route reuse
       distanceKm: Math.round(r.distance / 1000),
+      distanceMeters: r.distance,
+      durationSeconds: r.duration,
       eta: formatDuration(r.duration),
       riskScore: score,
       risk: risk.level,
+      riskBand: dbBand, // DB enum
       color: risk.color,
       isRecommended: rankIdx === 0,
       riskReasons: riskReasons(risk.level, rankIdx),
@@ -261,5 +301,5 @@ export async function GET(req: Request) {
     };
   });
 
-  return NextResponse.json({ routes, isMock });
+  return NextResponse.json({ routes });
 }
