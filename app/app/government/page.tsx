@@ -128,6 +128,7 @@ export default function GovernmentPage() {
   // Fetched routes preview — map stays empty until Choose route is clicked
   const [fetchedRoutes, setFetchedRoutes] = useState<any[] | null>(null);
   const [selectingIdx, setSelectingIdx] = useState<number | null>(null);
+  const [selectedRouteIdx, setSelectedRouteIdx] = useState<number | null>(null);
   const [selectError, setSelectError] = useState<string | null>(null);
   const [originAddressVal, setOriginAddressVal] = useState("");
   const [destAddressVal, setDestAddressVal] = useState("");
@@ -304,16 +305,40 @@ export default function GovernmentPage() {
     setMissionError(null);
     setCreatedMission(null);
     setMissionLoading(true);
+
+    let payloadRoutes: any[] = [];
+    if (fetchedRoutes && selectedRouteIdx !== null) {
+      const reordered = [
+        fetchedRoutes[selectedRouteIdx],
+        ...fetchedRoutes.filter((_: any, i: number) => i !== selectedRouteIdx),
+      ];
+      payloadRoutes = reordered.map((rr: any) => ({
+        geometry: rr.geometry || { type: "LineString", coordinates: rr.coordinates },
+        distanceMeters: rr.distanceMeters ?? Math.round((rr.distanceKm || 0) * 1000),
+        durationSeconds: rr.durationSeconds ?? 0,
+        riskScore: rr.riskScore ?? (rr.riskScore === 0 ? 0 : Math.round((rr.disruption_risk || 0) * 100)),
+        riskBand: rr.riskBand || (rr.risk === "MEDIUM" ? "MODERATE" : rr.risk) || "LOW",
+      }));
+    }
+
     const payload = {
       truckNo: truckNo.trim().toUpperCase(),
       cargoType,
       cargoQuantity: cargoQuantity.trim(),
-      origin: origin.trim(),
-      destination: destination.trim(),
+      origin: originCoords ? `${originCoords.lon},${originCoords.lat}` : origin.trim(),
+      destination: destCoords ? `${destCoords.lon},${destCoords.lat}` : destination.trim(),
+      originAddress: originAddressVal || origin.trim(),
+      destinationAddress: destAddressVal || destination.trim(),
       targetArrival,
+      routes: payloadRoutes,
     };
+
     try {
-      const res = await fetch("/api/missions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch("/api/missions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setMissionError(data?.message || "Could not create the mission. Please review the fields.");
@@ -321,7 +346,19 @@ export default function GovernmentPage() {
         return;
       }
       setCreatedMission(data?.mission ?? { truckNo: payload.truckNo });
-      setTruckNo(""); setCargoQuantity(""); setOrigin(""); setDestination(""); setTargetArrival(""); setCargoType("MEDICAL");
+      setTruckNo("");
+      setCargoQuantity("");
+      setOrigin("");
+      setDestination("");
+      setTargetArrival("");
+      setCargoType("MEDICAL");
+      setOriginCoords(null);
+      setDestCoords(null);
+      setOriginAddressVal("");
+      setDestAddressVal("");
+      setFetchedRoutes(null);
+      setSelectedRouteIdx(null);
+      setRouteCreated(true);
       setMissionLoading(false);
     } catch {
       setMissionError("Unable to reach the server.");
@@ -471,7 +508,7 @@ export default function GovernmentPage() {
                                 <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
                                   {originSuggestions.map((r) => (
                                     <li key={r.place_id}>
-                                      <button type="button" onClick={() => { setOrigin(r.display_name.split(',')[0].trim()); setOriginAddressVal(r.display_name); setOriginCoords({ lat: r.lat, lon: r.lon }); setOriginSuggestions([]); setFetchedRoutes(null); setRouteCreated(false); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
+                                      <button type="button" onClick={() => { setOrigin(r.display_name.split(',')[0].trim()); setOriginAddressVal(r.display_name); setOriginCoords({ lat: r.lat, lon: r.lon }); setOriginSuggestions([]); setFetchedRoutes(null); setSelectedRouteIdx(null); setRouteCreated(false); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
                                         <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-india" />
                                         <span className="line-clamp-2">{r.display_name}</span>
                                       </button>
@@ -494,7 +531,7 @@ export default function GovernmentPage() {
                                 <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
                                   {destSuggestions.map((r) => (
                                     <li key={r.place_id}>
-                                      <button type="button" onClick={() => { setDestination(r.display_name.split(',')[0].trim()); setDestAddressVal(r.display_name); setDestCoords({ lat: r.lat, lon: r.lon }); setDestSuggestions([]); setFetchedRoutes(null); setRouteCreated(false); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
+                                      <button type="button" onClick={() => { setDestination(r.display_name.split(',')[0].trim()); setDestAddressVal(r.display_name); setDestCoords({ lat: r.lat, lon: r.lon }); setDestSuggestions([]); setFetchedRoutes(null); setSelectedRouteIdx(null); setRouteCreated(false); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
                                         <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-india" />
                                         <span className="line-clamp-2">{r.display_name}</span>
                                       </button>
@@ -530,6 +567,7 @@ export default function GovernmentPage() {
                               setSelectError(null);
                               setRouteCreated(false);
                               setFetchedRoutes(null);
+                              setSelectedRouteIdx(null);
                               setRouteLoading(true);
                               try {
                                 const o = `${originCoords.lon},${originCoords.lat}`;
@@ -553,7 +591,7 @@ export default function GovernmentPage() {
                           >
                             {routeLoading ? <span>Creating route…</span> : <><Icon name="route" size={16} /><span>Choose route</span></>}
                           </button>
-                          <button type="submit" disabled={missionLoading || selectingIdx !== null} className="flex items-center justify-center gap-2 rounded-md bg-india px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-india-600 disabled:cursor-not-allowed disabled:opacity-70">
+                          <button type="submit" disabled={missionLoading || selectedRouteIdx === null} className="flex items-center justify-center gap-2 rounded-md bg-india px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-india-600 disabled:cursor-not-allowed disabled:opacity-70">
                             {missionLoading ? <span>Creating…</span> : <><span>Create &amp; assign mission</span><Icon name="arrowRight" size={16} /></>}
                           </button>
                         </div>
@@ -576,62 +614,26 @@ export default function GovernmentPage() {
                                 </div>
                                 <button
                                   type="button"
-                                  disabled={selectingIdx !== null}
-                                  onClick={async () => {
-                                    if (selectingIdx !== null) return;
+                                  onClick={() => {
                                     // Validate mission form completeness
                                     if (!truckNo.trim() || !cargoQuantity.trim() || !origin.trim() || !destination.trim() || !targetArrival) {
                                       setSelectError("Fill truck, cargo, origin, destination and target arrival before selecting a route.");
                                       return;
                                     }
-                                    if (!originCoords || !destCoords) { setSelectError("Select origin/destination from suggestions first."); return; }
+                                    if (!originCoords || !destCoords) {
+                                      setSelectError("Select origin/destination from suggestions first.");
+                                      return;
+                                    }
                                     setSelectError(null);
-                                    setSelectingIdx(idx);
-                                    try {
-                                      // 1) Create mission first — need missionId for choose-route
-                                      const missionPayload: Record<string, unknown> = {
-                                        truckNo: truckNo.trim().toUpperCase(),
-                                        cargoType,
-                                        cargoQuantity: cargoQuantity.trim(),
-                                        origin: `${originCoords.lon},${originCoords.lat}`,
-                                        destination: `${destCoords.lon},${destCoords.lat}`,
-                                        originAddress: originAddressVal || origin.trim(),
-                                        destinationAddress: destAddressVal || destination.trim(),
-                                        targetArrival,
-                                      };
-                                      const mRes = await fetch("/api/missions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(missionPayload) });
-                                      const mData: any = await mRes.json().catch(()=>({}));
-                                      if (!mRes.ok) { setSelectError(mData?.message || mData?.error || "Mission creation failed."); setSelectingIdx(null); return; }
-                                      const missionId: string = mData?.mission?.missionId || mData?.missionId;
-                                      const missionTruckNo: string = mData?.mission?.truckNo || missionPayload.truckNo as string;
-                                      if (!missionId) { setSelectError("Mission created but no missionId returned."); setSelectingIdx(null); return; }
-                                      // 2) Reorder: chosen at index 0 as backend expects version1 rank1 = selected
-                                      const reordered = [fetchedRoutes[idx], ...fetchedRoutes.filter((_: any, i: number) => i!==idx)];
-                                      // Verify keys: backend expects geometry, distanceMeters, durationSeconds, riskScore, riskBand
-                                      const routesForDb = reordered.map((rr: any) => ({
-                                        geometry: rr.geometry || { type: "LineString", coordinates: rr.coordinates },
-                                        distanceMeters: rr.distanceMeters ?? Math.round((rr.distanceKm||0)*1000),
-                                        durationSeconds: rr.durationSeconds ?? 0,
-                                        riskScore: rr.riskScore ?? (rr.riskScore===0?0: Math.round((rr.disruption_risk||0)*100)),
-                                        riskBand: rr.riskBand || (rr.risk==="MEDIUM" ? "MODERATE" : rr.risk) || "LOW",
-                                      }));
-                                      console.log("[choose-route] payload", { missionId, truckNo: missionTruckNo, routes: routesForDb });
-                                      const cRes = await fetch("/api/gov/choose-route", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ missionId, truckNo: missionTruckNo, routes: routesForDb }) });
-                                      const cData: any = await cRes.json().catch(()=>({}));
-                                      if (!cRes.ok) { setSelectError(cData?.message || "Failed to save routes."); setSelectingIdx(null); return; }
-                                      // Success — reflect saved docs
-                                      console.log("[choose-route] saved docs", cData.routes);
-                                      setCreatedMission(mData.mission);
-                                      setRouteCreated(true);
-                                      // Optionally clear form or keep
-                                      setFetchedRoutes(null);
-                                    } catch (e: any) {
-                                      setSelectError(String(e?.message || "Unable to reach server."));
-                                    } finally { setSelectingIdx(null); }
+                                    setSelectedRouteIdx(idx);
                                   }}
-                                  className={`shrink-0 rounded-md px-4 py-2 text-xs font-bold ${selectingIdx===idx ? "bg-line text-muted" : "bg-india text-white hover:bg-india-600"}`}
+                                  className={`shrink-0 rounded-md px-4 py-2 text-xs font-bold transition-all ${
+                                    selectedRouteIdx === idx
+                                      ? "bg-green-100 border border-[#166534] text-[#166534]"
+                                      : "bg-india text-white hover:bg-india-600"
+                                  }`}
                                 >
-                                  {selectingIdx===idx ? "Saving…" : "Select"}
+                                  {selectedRouteIdx === idx ? "Selected" : "Select"}
                                 </button>
                               </div>
                             ))}
@@ -644,7 +646,7 @@ export default function GovernmentPage() {
 
                   {/* Right: live map preview — empty until Choose route */}
                   <div className="lg:col-span-7">
-                    {!fetchedRoutes ? (
+                    {!fetchedRoutes || !originCoords || !destCoords ? (
                       <div className="flex h-[580px] w-full flex-col items-center justify-center rounded-card border border-dashed border-line bg-canvas p-8 text-center">
                         <Icon name="mapPin" size={28} className="text-subtle" />
                         <p className="mt-3 text-sm font-semibold text-navy">No route preview yet</p>
@@ -654,10 +656,10 @@ export default function GovernmentPage() {
                       <>
                         <div className="overflow-hidden rounded-card border border-line">
                           <MapComponent
-                            key={originCoords ? `${originCoords.lon},${originCoords.lat}-${destCoords!.lon},${destCoords!.lat}` : "empty"}
+                            key={`${originCoords.lon},${originCoords.lat}-${destCoords.lon},${destCoords.lat}`}
                             mode="routes"
-                            origin={`${originCoords!.lon},${originCoords!.lat}`}
-                            destination={`${destCoords!.lon},${destCoords!.lat}`}
+                            origin={`${originCoords.lon},${originCoords.lat}`}
+                            destination={`${destCoords.lon},${destCoords.lat}`}
                             height="580px"
                             showControls={false}
                           />
