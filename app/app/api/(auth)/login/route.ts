@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     if (!body) {
       return NextResponse.json(
         { message: "Request body is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
           message: "Validation failed",
           errors: parsed.error.flatten(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     if (!process.env.MONGODB_URI) {
       return NextResponse.json(
         { message: "Database is not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { message: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     if (!isPasswordValid) {
       return NextResponse.json(
         { message: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
           ...(user.adminProfile ? { adminProfile: user.adminProfile } : {}),
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
 
     response.cookies.set({
@@ -123,9 +123,7 @@ export async function POST(req: NextRequest) {
       {
         message: "Something went wrong while logging in",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
