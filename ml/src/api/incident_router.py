@@ -96,9 +96,9 @@ def report_incident(
     }
 
 @app.get("/api/v1/news/ner")
-def get_live_news():
+def get_live_news(region: Optional[str] = None):
     try:
-        news = fetch_ner_disaster_news()
+        news = fetch_ner_disaster_news(region)
         return {"status": "success", "articles": news}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

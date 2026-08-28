@@ -20,22 +20,26 @@ interface NavLink {
 
 const LINKS_PUBLIC: NavLink[] = [
   { href: "/", label: "Home", icon: "navigation", exact: true },
+  { href: "/news", label: "News", icon: "info", match: "/news" },
 ];
 
 const LINKS_USER: NavLink[] = [
   { href: "/", label: "Home", icon: "navigation", exact: true },
+  { href: "/news", label: "News", icon: "info", match: "/news" },
   { href: "/user/dashboard", label: "Route planner", icon: "gauge", match: "/user" },
   { href: "/report", label: "Report incident", icon: "alertTriangle", match: "/report" },
 ];
 
 const LINKS_DRIVER: NavLink[] = [
   { href: "/", label: "Home", icon: "navigation", exact: true },
+  { href: "/news", label: "News", icon: "info", match: "/news" },
   { href: "/your-mission", label: "Driver mission", icon: "truck", match: "/your-mission" },
   { href: "/report", label: "Report incident", icon: "alertTriangle", match: "/report" },
 ];
 
 const LINKS_ADMIN: NavLink[] = [
   { href: "/", label: "Home", icon: "navigation", exact: true },
+  { href: "/news", label: "News", icon: "info", match: "/news" },
   { href: "/government", label: "Gov dashboard", icon: "landmark", match: "/government" },
 ];
 
