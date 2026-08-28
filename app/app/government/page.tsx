@@ -67,6 +67,8 @@ interface CreatedMission {
   cargoType?: string;
   origin?: string;
   destination?: string;
+  originAddress?: string;
+  destinationAddress?: string;
   status?: string;
 }
 
@@ -91,6 +93,16 @@ function statusMeta(status?: string): { label: string; chip: string } {
     case "CANCELLED": return { label: "Cancelled", chip: "border-danger-line bg-danger-bg text-danger" };
     default: return { label: "Pending", chip: "border-warning-line bg-warning-bg text-warning" };
   }
+}
+
+function isCoordinateString(val?: string): boolean {
+  return !!val && /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(val.trim());
+}
+
+function displayLocation(address?: string, coord?: string): string {
+  if (address && address.trim()) return address;
+  if (coord && !isCoordinateString(coord)) return coord;
+  return "—";
 }
 
 type Tab = "create" | "missions" | "fleet";
@@ -434,8 +446,8 @@ export default function GovernmentPage() {
                           <div className="mt-2.5 grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] text-ink">
                             {createdMission.missionId && <p><span className="text-muted">ID: </span><strong className="font-mono">{createdMission.missionId}</strong></p>}
                             {createdMission.truckNo && <p><span className="text-muted">Truck: </span><strong className="font-mono">{createdMission.truckNo}</strong></p>}
-                            {createdMission.origin && <p><span className="text-muted">From: </span><strong>{createdMission.origin}</strong></p>}
-                            {createdMission.destination && <p><span className="text-muted">To: </span><strong>{createdMission.destination}</strong></p>}
+                            {(createdMission.originAddress || createdMission.origin) && <p><span className="text-muted">From: </span><strong>{displayLocation(createdMission.originAddress, createdMission.origin)}</strong></p>}
+                            {(createdMission.destinationAddress || createdMission.destination) && <p><span className="text-muted">To: </span><strong>{displayLocation(createdMission.destinationAddress, createdMission.destination)}</strong></p>}
                           </div>
                         </div>
                       )}
@@ -700,7 +712,7 @@ export default function GovernmentPage() {
                               <tr key={m._id} className="hover:bg-wash">
                                 <td className="px-5 py-3 font-mono text-[13px] font-semibold text-navy">{m.missionId || "—"}</td>
                                 <td className="px-5 py-3 font-mono">{m.truckNo || "—"}</td>
-                                <td className="px-5 py-3">{safeRender(m.origin)} → {safeRender(m.destination)}</td>
+                                <td className="px-5 py-3">{displayLocation(m.originAddress, m.origin)} → {displayLocation(m.destinationAddress, m.destination)}</td>
                                 <td className="px-5 py-3">{safeRender(m.cargoType)} · {safeRender(m.cargoQuantity)}</td>
                                 <td className="px-5 py-3 text-[13px]">{formatDate(m.targetArrival)}</td>
                                 <td className="px-5 py-3">
