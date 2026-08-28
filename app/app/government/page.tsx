@@ -67,6 +67,8 @@ interface CreatedMission {
   cargoType?: string;
   origin?: string;
   destination?: string;
+  originAddress?: string;
+  destinationAddress?: string;
   status?: string;
 }
 
@@ -345,7 +347,12 @@ export default function GovernmentPage() {
         setMissionLoading(false);
         return;
       }
-      setCreatedMission(data?.mission ?? { truckNo: payload.truckNo });
+      const missionResult = data?.mission ?? { truckNo: payload.truckNo };
+      setCreatedMission({
+        ...missionResult,
+        originAddress: missionResult.originAddress || originAddressVal || origin,
+        destinationAddress: missionResult.destinationAddress || destAddressVal || destination,
+      });
       setTruckNo("");
       setCargoQuantity("");
       setOrigin("");
@@ -443,8 +450,8 @@ export default function GovernmentPage() {
                           <div className="mt-2.5 grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] text-ink">
                             {createdMission.missionId && <p><span className="text-muted">ID: </span><strong className="font-mono">{createdMission.missionId}</strong></p>}
                             {createdMission.truckNo && <p><span className="text-muted">Truck: </span><strong className="font-mono">{createdMission.truckNo}</strong></p>}
-                            {createdMission.origin && <p><span className="text-muted">From: </span><strong>{createdMission.origin}</strong></p>}
-                            {createdMission.destination && <p><span className="text-muted">To: </span><strong>{createdMission.destination}</strong></p>}
+                            {(createdMission.originAddress || createdMission.origin) && <p><span className="text-muted">From: </span><strong>{createdMission.originAddress || createdMission.origin}</strong></p>}
+                            {(createdMission.destinationAddress || createdMission.destination) && <p><span className="text-muted">To: </span><strong>{createdMission.destinationAddress || createdMission.destination}</strong></p>}
                           </div>
                         </div>
                       )}
