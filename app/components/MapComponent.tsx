@@ -397,28 +397,6 @@ export default function MapComponent({
       });
     });
 
-    if (routeList.length > 0) {
-      const firstRoute = routeList[0];
-      const originCoord = firstRoute.coordinates[0];
-      const destCoord = firstRoute.coordinates[firstRoute.coordinates.length - 1];
-      
-      // Origin marker — text label only (emoji removed)
-      new window.mappls.Marker({
-        map: mapRef.current!,
-        position: { lat: originCoord[1], lng: originCoord[0] },
-        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)"><div style="background:#0f2747;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2)">You are here</div></div>`,
-        popupHtml: `<div style="font-size:14px;padding:6px 10px;font-family:inherit"><strong>You are here</strong></div>`,
-      });
-
-      // Destination marker — text label only (emoji removed)
-      new window.mappls.Marker({
-        map: mapRef.current!,
-        position: { lat: destCoord[1], lng: destCoord[0] },
-        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)"><div style="background:#d97706;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2)">Destination</div></div>`,
-        popupHtml: `<div style="font-size:14px;padding:6px 10px;font-family:inherit"><strong>Destination</strong></div>`,
-      });
-    }
-
     if (allPoints.length && mapRef.current.fitBounds) {
       mapRef.current.fitBounds(allPoints, {
         padding: 60,
