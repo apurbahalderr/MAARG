@@ -397,36 +397,6 @@ export default function MapComponent({
       });
     });
 
-    if (routeList.length > 0) {
-      const firstRoute = routeList[0];
-      const originCoord = firstRoute.coordinates[0];
-      const destCoord = firstRoute.coordinates[firstRoute.coordinates.length - 1];
-      
-      const emoji = userType === 'driver' ? '🚛' : '🚗';
-      
-      // Origin marker with emoji visible directly on map (like Rapido bike icon)
-      new window.mappls.Marker({
-        map: mapRef.current!,
-        position: { lat: originCoord[1], lng: originCoord[0] },
-        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
-          <div style="font-size:32px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));line-height:1">${emoji}</div>
-          <div style="margin-top:2px;background:#0f2747;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2)">You are here</div>
-        </div>`,
-        popupHtml: `<div style="font-size:14px;padding:6px 10px;font-family:inherit"><span style="font-size:20px">${emoji}</span> <strong>You are here</strong></div>`,
-      });
-      
-      // Destination marker with flag emoji
-      new window.mappls.Marker({
-        map: mapRef.current!,
-        position: { lat: destCoord[1], lng: destCoord[0] },
-        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
-          <div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));line-height:1">📍</div>
-          <div style="margin-top:2px;background:#d97706;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2)">Destination</div>
-        </div>`,
-        popupHtml: `<div style="font-size:14px;padding:6px 10px;font-family:inherit"><span style="font-size:20px">📍</span> <strong>Destination</strong></div>`,
-      });
-    }
-
     if (allPoints.length && mapRef.current.fitBounds) {
       mapRef.current.fitBounds(allPoints, {
         padding: 60,

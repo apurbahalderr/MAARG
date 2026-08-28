@@ -95,6 +95,16 @@ function statusMeta(status?: string): { label: string; chip: string } {
   }
 }
 
+function isCoordinateString(val?: string): boolean {
+  return !!val && /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(val.trim());
+}
+
+function displayLocation(address?: string, coord?: string): string {
+  if (address && address.trim()) return address;
+  if (coord && !isCoordinateString(coord)) return coord;
+  return "—";
+}
+
 type Tab = "create" | "missions" | "fleet";
 
 export default function GovernmentPage() {
@@ -199,7 +209,7 @@ export default function GovernmentPage() {
         const d = await res.json();
         if (!d.success || !d.data) return null;
         const mission = activeMissions.find((m) => m.truckNo === tn);
-        
+
         const loc = d.data.location;
         const lat = loc?.coordinates?.[1] ?? d.data.lat;
         const lng = loc?.coordinates?.[0] ?? d.data.lng;
@@ -217,16 +227,7 @@ export default function GovernmentPage() {
       .map((r) => r.value)
       .filter((t): t is FleetTruck => t !== null);
 
-    if (trucks.length === 0) {
-      // Demo truck positions for demonstration
-      setFleetTrucks([
-        { truckNo: "AS01AB1234", lat: 26.5535, lng: 92.0206, missionId: "M-2026-0042" },
-        { truckNo: "AS02CD5678", lat: 27.4712, lng: 94.9120, missionId: "M-2026-0043" },
-        { truckNo: "AS03EF9012", lat: 25.5788, lng: 91.8933, missionId: "M-2026-0041" },
-      ]);
-    } else {
-      setFleetTrucks(trucks);
-    }
+    setFleetTrucks(trucks);
   }, []);
 
   // Load missions when "missions" or "fleet" tab becomes active
@@ -450,8 +451,8 @@ export default function GovernmentPage() {
                           <div className="mt-2.5 grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] text-ink">
                             {createdMission.missionId && <p><span className="text-muted">ID: </span><strong className="font-mono">{createdMission.missionId}</strong></p>}
                             {createdMission.truckNo && <p><span className="text-muted">Truck: </span><strong className="font-mono">{createdMission.truckNo}</strong></p>}
-                            {(createdMission.originAddress || createdMission.origin) && <p><span className="text-muted">From: </span><strong>{createdMission.originAddress || createdMission.origin}</strong></p>}
-                            {(createdMission.destinationAddress || createdMission.destination) && <p><span className="text-muted">To: </span><strong>{createdMission.destinationAddress || createdMission.destination}</strong></p>}
+                            {(createdMission.originAddress || createdMission.origin) && <p><span className="text-muted">From: </span><strong>{displayLocation(createdMission.originAddress, createdMission.origin)}</strong></p>}
+                            {(createdMission.destinationAddress || createdMission.destination) && <p><span className="text-muted">To: </span><strong>{displayLocation(createdMission.destinationAddress, createdMission.destination)}</strong></p>}
                           </div>
                         </div>
                       )}
@@ -716,7 +717,7 @@ export default function GovernmentPage() {
                               <tr key={m._id} className="hover:bg-wash">
                                 <td className="px-5 py-3 font-mono text-[13px] font-semibold text-navy">{m.missionId || "—"}</td>
                                 <td className="px-5 py-3 font-mono">{m.truckNo || "—"}</td>
-                                <td className="px-5 py-3">{safeRender(m.origin)} → {safeRender(m.destination)}</td>
+                                <td className="px-5 py-3">{displayLocation(m.originAddress, m.origin)} → {displayLocation(m.destinationAddress, m.destination)}</td>
                                 <td className="px-5 py-3">{safeRender(m.cargoType)} · {safeRender(m.cargoQuantity)}</td>
                                 <td className="px-5 py-3 text-[13px]">{formatDate(m.targetArrival)}</td>
                                 <td className="px-5 py-3">
