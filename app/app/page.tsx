@@ -1,9 +1,13 @@
+"use client";
+
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AccountTypeCard from "@/components/AccountTypeCard";
 import SectionHeader from "@/components/SectionHeader";
 import MapPlaceholder from "@/components/MapPlaceholder";
 import Icon, { type IconName } from "@/components/Icon";
+import { useAuth } from "@/lib/auth-context";
+import { useIsClient } from "@/components/useIsClient";
 
 const HAZARDS: { label: string; icon: IconName }[] = [
   { label: "Heavy rainfall", icon: "cloudRain" },
@@ -55,6 +59,9 @@ const WORKFLOW: { step: string; name: string; desc: string; icon: IconName }[] =
 ];
 
 export default function HomePage() {
+  const { isLoggedIn, isAdmin, isDriver, isUser } = useAuth();
+  const isClient = useIsClient();
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-canvas text-ink">
       <Navbar />
@@ -126,51 +133,86 @@ export default function HomePage() {
         </section>
 
         {/* ================= CHOOSE PORTAL (prominent, high on page) ============= */}
-        <section id="choose" className="w-full border-b border-line bg-canvas">
-          <div className="mx-auto w-full max-w-[1600px] px-4 py-16 sm:px-8 lg:px-12">
-            <SectionHeader
-              badge="Get started"
-              title="Choose how you'll use MAARG"
-              subtitle="Two entry points, tailored to what you do. Select the portal that matches your role."
-              centered
-            />
+        {(!isClient || !isLoggedIn) && (
+          <section id="choose" className="w-full border-b border-line bg-canvas">
+            <div className="mx-auto w-full max-w-[1600px] px-4 py-16 sm:px-8 lg:px-12">
+              <SectionHeader
+                badge="Get started"
+                title="Choose how you'll use MAARG"
+                subtitle="Two entry points, tailored to what you do. Select the portal that matches your role."
+                centered
+              />
 
-            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2">
-              <AccountTypeCard
-                size="lg"
-                badge="Authorised access"
-                icon="landmark"
-                title="Government / Authority"
-                description="For state transport, disaster-response, and essential-goods supply teams."
-                features={[
-                  "Create and assign logistics missions",
-                  "Register trucks, drivers and cargo priorities",
-                  "Monitor the fleet live via GNSS / NavIC",
-                  "Issue road-hazard and landslide advisories",
-                ]}
-                buttonText="Enter Government portal"
-                href="/government"
-                variant="india"
-              />
-              <AccountTypeCard
-                size="lg"
-                badge="Public & logistics"
-                icon="users"
-                title="User & Driver"
-                description="For citizens planning journeys and government-assigned drivers on active missions."
-                features={[
-                  "Check route accessibility and risk forecasts",
-                  "Plan safe civilian journeys across the NER",
-                  "Access your assigned driver mission",
-                  "Report road incidents from the field",
-                ]}
-                buttonText="Continue as User / Driver"
-                href="/user/select"
-                variant="primary"
-              />
+              <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2">
+                <AccountTypeCard
+                  size="lg"
+                  badge="Authorised access"
+                  icon="landmark"
+                  title="Government / Authority"
+                  description="For state transport, disaster-response, and essential-goods supply teams."
+                  features={[
+                    "Create and assign logistics missions",
+                    "Register trucks, drivers and cargo priorities",
+                    "Monitor the fleet live via GNSS / NavIC",
+                    "Issue road-hazard and landslide advisories",
+                  ]}
+                  buttonText="Enter Government portal"
+                  href="/government"
+                  variant="india"
+                />
+                <AccountTypeCard
+                  size="lg"
+                  badge="Public & logistics"
+                  icon="users"
+                  title="User & Driver"
+                  description="For citizens planning journeys and government-assigned drivers on active missions."
+                  features={[
+                    "Check route accessibility and risk forecasts",
+                    "Plan safe civilian journeys across the NER",
+                    "Access your assigned driver mission",
+                    "Report road incidents from the field",
+                  ]}
+                  buttonText="Continue as User / Driver"
+                  href="/user/select"
+                  variant="primary"
+                />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
+
+        {isClient && isLoggedIn && (
+          <section id="choose" className="w-full border-b border-line bg-canvas">
+            <div className="mx-auto w-full max-w-[1600px] px-4 py-12 sm:px-8 lg:px-12">
+              <SectionHeader
+                badge="Welcome back"
+                title="Jump back in"
+                subtitle="Quick access to your tools and dashboards."
+                centered
+              />
+              <div className="mx-auto flex max-w-2xl flex-wrap justify-center gap-4">
+                {isAdmin && (
+                  <a href="/government" className="inline-flex items-center gap-2 rounded-md bg-india px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-india-600">
+                    <Icon name="landmark" size={16} /> Government Dashboard
+                  </a>
+                )}
+                {isDriver && (
+                  <a href="/your-mission" className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600">
+                    <Icon name="truck" size={16} /> Your Mission
+                  </a>
+                )}
+                {isUser && (
+                  <a href="/user/dashboard" className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600">
+                    <Icon name="route" size={16} /> Route Planner
+                  </a>
+                )}
+                <a href="/report" className="inline-flex items-center gap-2 rounded-md border border-line-strong bg-surface px-6 py-3 text-sm font-semibold text-navy transition-colors hover:border-primary hover:text-primary">
+                  <Icon name="alertTriangle" size={16} /> Report Incident
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ================= CAPABILITIES ================= */}
         <section id="about" className="w-full border-b border-line bg-surface">
@@ -227,25 +269,27 @@ export default function HomePage() {
         </section>
 
         {/* ================= CLOSING CTA ================= */}
-        <section className="w-full bg-surface">
-          <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-8 lg:px-12">
-            <div className="flex flex-col items-center justify-between gap-5 rounded-[10px] border border-line bg-canvas p-8 text-center sm:flex-row sm:text-left">
-              <div>
-                <h3 className="text-xl font-semibold text-navy">Ready to plan a safer route?</h3>
-                <p className="mt-1.5 text-sm text-muted">
-                  Pick your portal to check accessibility, manage missions, or report a road incident.
-                </p>
+        {(!isClient || !isLoggedIn) && (
+          <section className="w-full bg-surface">
+            <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-8 lg:px-12">
+              <div className="flex flex-col items-center justify-between gap-5 rounded-[10px] border border-line bg-canvas p-8 text-center sm:flex-row sm:text-left">
+                <div>
+                  <h3 className="text-xl font-semibold text-navy">Ready to plan a safer route?</h3>
+                  <p className="mt-1.5 text-sm text-muted">
+                    Pick your portal to check accessibility, manage missions, or report a road incident.
+                  </p>
+                </div>
+                <a
+                  href="#choose"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
+                >
+                  Choose your portal
+                  <Icon name="arrowRight" size={16} />
+                </a>
               </div>
-              <a
-                href="#choose"
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-600"
-              >
-                Choose your portal
-                <Icon name="arrowRight" size={16} />
-              </a>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       <Footer />

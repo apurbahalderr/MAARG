@@ -12,52 +12,46 @@ export interface IVehicleLocation extends Document {
   speed?: number;
   heading?: number;
 
-  timestamp: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const vehicleLocationSchema =
-  new Schema<IVehicleLocation>(
-    {
-      truckNo: {
+const vehicleLocationSchema = new Schema<IVehicleLocation>(
+  {
+    truckNo: {
+      type: String,
+      required: true,
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
+
+    missionId: {
+      type: String,
+      index: true,
+    },
+
+    location: {
+      type: {
         type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+
+      coordinates: {
+        type: [Number],
         required: true,
-        trim: true,
-        uppercase: true,
-        index: true,
-      },
-
-      missionId: {
-        type: String,
-        index: true,
-      },
-
-      location: {
-        type: {
-          type: String,
-          enum: ["Point"],
-          default: "Point",
-        },
-
-        coordinates: {
-          type: [Number],
-          required: true,
-        },
-      },
-
-      speed: Number,
-
-      heading: Number,
-
-      timestamp: {
-        type: Date,
-        required: true,
-        index: true,
       },
     },
-    {
-      timestamps: false,
-    }
-  );
+
+    speed: Number,
+
+    heading: Number,
+  },
+  {
+    timestamps: true,
+  },
+);
 
 vehicleLocationSchema.index({
   location: "2dsphere",
@@ -70,7 +64,4 @@ vehicleLocationSchema.index({
 
 export const VehicleLoc =
   mongoose.models.VehicleLoc ||
-  mongoose.model<IVehicleLocation>(
-    "VehicleLoc",
-    vehicleLocationSchema
-  );
+  mongoose.model<IVehicleLocation>("VehicleLoc", vehicleLocationSchema);

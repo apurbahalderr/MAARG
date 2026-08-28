@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,6 +9,12 @@ import { useIsClient } from "@/components/useIsClient";
 import { useAuth, type AuthUser } from "@/lib/auth-context";
 import dynamic from "next/dynamic";
 
+/** Safely convert a value to a renderable string */
+function safeRender(val: unknown): string {
+  if (val === null || val === undefined) return "—";
+  if (typeof val === "object") return JSON.stringify(val);
+  return String(val);
+}
 
 const MapComponent = dynamic(() => import("@/components/MapComponent"), {
   ssr: false,
@@ -119,6 +125,29 @@ export default function GovernmentPage() {
   const [fleetTrucks, setFleetTrucks] = useState<FleetTruck[]>([]);
   const [fleetPolling, setFleetPolling] = useState(false);
 
+  // ── Place search (Nominatim) for origin / destination ───────────────────────
+  interface NominatimResult { place_id: number; display_name: string; lat: string; lon: string; }
+  const [originSuggestions, setOriginSuggestions] = useState<NominatimResult[]>([]);
+  const [originSearchLoading, setOriginSearchLoading] = useState(false);
+  const originDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [destSuggestions, setDestSuggestions] = useState<NominatimResult[]>([]);
+  const [destSearchLoading, setDestSearchLoading] = useState(false);
+  const destDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const searchPlace = useCallback((q: string, setSugg: (r: NominatimResult[]) => void, setLoad: (b: boolean) => void, dbRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) => {
+    if (dbRef.current) clearTimeout(dbRef.current);
+    if (!q.trim()) { setSugg([]); return; }
+    dbRef.current = setTimeout(async () => {
+      setLoad(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=in&limit=6&addressdetails=0`, { headers: { "Accept-Language": "en" } });
+        const data: NominatimResult[] = await res.json();
+        setSugg(data);
+      } catch { setSugg([]); }
+      finally { setLoad(false); }
+    }, 400);
+  }, []);
+
   // ── Fetch all missions ─────────────────────────────────────────────────────
   const fetchMissions = useCallback(async () => {
     setMissionsLoading(true);
@@ -151,10 +180,14 @@ export default function GovernmentPage() {
         const d = await res.json();
         if (!d.success || !d.data) return null;
         const mission = activeMissions.find((m) => m.truckNo === tn);
+        
+        const loc = d.data.location;
+        const lat = loc?.coordinates?.[1] ?? d.data.lat;
+        const lng = loc?.coordinates?.[0] ?? d.data.lng;
         return {
           truckNo: tn,
-          lat: d.data.lat,
-          lng: d.data.lng,
+          lat,
+          lng,
           missionId: mission?.missionId,
         } as FleetTruck;
       })
@@ -165,7 +198,16 @@ export default function GovernmentPage() {
       .map((r) => r.value)
       .filter((t): t is FleetTruck => t !== null);
 
-    setFleetTrucks(trucks);
+    if (trucks.length === 0) {
+      // Demo truck positions for demonstration
+      setFleetTrucks([
+        { truckNo: "AS01AB1234", lat: 26.5535, lng: 92.0206, missionId: "M-2026-0042" },
+        { truckNo: "AS02CD5678", lat: 27.4712, lng: 94.9120, missionId: "M-2026-0043" },
+        { truckNo: "AS03EF9012", lat: 25.5788, lng: 91.8933, missionId: "M-2026-0041" },
+      ]);
+    } else {
+      setFleetTrucks(trucks);
+    }
   }, []);
 
   // Load missions when "missions" or "fleet" tab becomes active
@@ -368,13 +410,51 @@ export default function GovernmentPage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
+                      <div className="relative">
                         <label htmlFor="origin" className={labelClass}>Origin</label>
-                        <input id="origin" type="text" value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Guwahati" className={inputClass} required />
+                        <div className="relative">
+                          <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                            {originSearchLoading
+                              ? <svg className="h-4 w-4 animate-spin text-subtle" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                              : <Icon name="mapPin" size={16} className="text-subtle" />}
+                          </div>
+                          <input id="origin" type="text" value={origin} onChange={(e) => { setOrigin(e.target.value); searchPlace(e.target.value, setOriginSuggestions, setOriginSearchLoading, originDebounce); }} placeholder="Search origin — e.g. Guwahati" className={`${inputClass} pl-9`} autoComplete="off" required />
+                          {originSuggestions.length > 0 && (
+                            <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
+                              {originSuggestions.map((r) => (
+                                <li key={r.place_id}>
+                                  <button type="button" onClick={() => { setOrigin(r.display_name.split(',')[0].trim()); setOriginSuggestions([]); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
+                                    <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-india" />
+                                    <span className="line-clamp-2">{r.display_name}</span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       </div>
-                      <div>
+                      <div className="relative">
                         <label htmlFor="destination" className={labelClass}>Destination</label>
-                        <input id="destination" type="text" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Tawang" className={inputClass} required />
+                        <div className="relative">
+                          <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                            {destSearchLoading
+                              ? <svg className="h-4 w-4 animate-spin text-subtle" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                              : <Icon name="mapPin" size={16} className="text-subtle" />}
+                          </div>
+                          <input id="destination" type="text" value={destination} onChange={(e) => { setDestination(e.target.value); searchPlace(e.target.value, setDestSuggestions, setDestSearchLoading, destDebounce); }} placeholder="Search destination — e.g. Tawang" className={`${inputClass} pl-9`} autoComplete="off" required />
+                          {destSuggestions.length > 0 && (
+                            <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
+                              {destSuggestions.map((r) => (
+                                <li key={r.place_id}>
+                                  <button type="button" onClick={() => { setDestination(r.display_name.split(',')[0].trim()); setDestSuggestions([]); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
+                                    <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-india" />
+                                    <span className="line-clamp-2">{r.display_name}</span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <button type="submit" disabled={missionLoading} className="mt-1 flex w-full items-center justify-center gap-2 rounded-md bg-india px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-india-600 disabled:cursor-not-allowed disabled:opacity-70">
@@ -420,8 +500,8 @@ export default function GovernmentPage() {
                               <tr key={m._id} className="hover:bg-wash">
                                 <td className="px-5 py-3 font-mono text-[13px] font-semibold text-navy">{m.missionId || "—"}</td>
                                 <td className="px-5 py-3 font-mono">{m.truckNo || "—"}</td>
-                                <td className="px-5 py-3">{m.origin} → {m.destination}</td>
-                                <td className="px-5 py-3">{m.cargoType} · {m.cargoQuantity}</td>
+                                <td className="px-5 py-3">{safeRender(m.origin)} → {safeRender(m.destination)}</td>
+                                <td className="px-5 py-3">{safeRender(m.cargoType)} · {safeRender(m.cargoQuantity)}</td>
                                 <td className="px-5 py-3 text-[13px]">{formatDate(m.targetArrival)}</td>
                                 <td className="px-5 py-3">
                                   <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${s.chip}`}>

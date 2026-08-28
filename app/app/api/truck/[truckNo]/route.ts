@@ -62,10 +62,9 @@ export async function POST(req: NextRequest, {params} : {params: Promise<{truckN
   return NextResponse.json({
     success: true,
     message: "Vehicle location updated successfully",
-    data: veh
-  })
+    data: veh,
+  });
 }
-
 
 // get the location of the driver
 export async function GET(req: NextRequest, {params} : {params: Promise<{truckNo: string}>}) {
@@ -88,6 +87,6 @@ export async function GET(req: NextRequest, {params} : {params: Promise<{truckNo
   return NextResponse.json({
     success: true,
     message: "Vehicle location retrieved successfully",
-    data: veh
-  })
+    data: veh,
+  });
 }
