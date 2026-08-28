@@ -6,6 +6,7 @@ import { Mission } from "@/models/mission";
 import { verifyJWT } from "@/utils/verifyJWT";
 import generateID from "@/utils/generateID";
 import { User } from "@/models/user";
+import { Route } from "@/models/routes";
 
 // GET /api/missions — admin lists all missions (optional ?status=PENDING|IN_PROGRESS|COMPLETED|CANCELLED)
 export async function GET(req: NextRequest) {
@@ -38,6 +39,24 @@ export async function GET(req: NextRequest) {
   }
 }
 
+const routeInputSchema = z.object({
+  routeId: z.string().trim().min(1).optional(),
+  geometry: z.object({
+    type: z.literal("LineString"),
+    coordinates: z.array(
+      z.tuple([
+        z.number().finite().min(-180).max(180),
+        z.number().finite().min(-90).max(90),
+      ])
+    ).min(2),
+  }),
+  distanceMeters: z.number().finite().nonnegative(),
+  durationSeconds: z.number().finite().nonnegative(),
+  riskScore: z.number().finite().min(0).max(100).default(0),
+  riskBand: z.enum(["LOW", "MODERATE", "HIGH", "CRITICAL"]).default("LOW"),
+  triggeredByIncidentId: z.string().trim().min(1).optional(),
+});
+
 const createMissionSchema = z.object({
   truckNo: z.string().trim().min(1, "Truck number is required"),
   cargoType: z.enum([
@@ -55,6 +74,7 @@ const createMissionSchema = z.object({
   originAddress: z.string().trim().max(500).optional(),
   destinationAddress: z.string().trim().max(500).optional(),
   targetArrival: z.coerce.date(),
+  routes: z.array(routeInputSchema).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -97,7 +117,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const mission = await Mission.create({ ...parsed.data, missionId, driverId: driverId._id });
+    const { routes, ...missionData } = parsed.data;
+    const mission = await Mission.create({ ...missionData, missionId, driverId: driverId._id });
+
+    if (routes && routes.length > 0) {
+      const latestRoute = await Route.findOne({ missionId })
+        .sort({ routeVersion: -1 })
+        .select("routeVersion")
+        .lean();
+      const routeVersion = (latestRoute?.routeVersion ?? 0) + 1;
+
+      await Route.updateMany(
+        { missionId, status: "ACTIVE" },
+        { $set: { status: "SUPERSEDED" } }
+      );
+
+      await Route.insertMany(
+        routes.map((route, index) => ({
+          ...route,
+          routeId: route.routeId ?? `${generateID("R")}-${index + 1}`,
+          missionId,
+          truckNo: parsed.data.truckNo,
+          routeVersion,
+          alternativeRank: index + 1,
+          status: "ACTIVE",
+        }))
+      );
+    }
 
     return NextResponse.json(
       { success: true, message: "Mission created successfully", mission },
