@@ -37,6 +37,8 @@ declare global {
         position: { lat: number; lng: number };
         fitBounds?: boolean;
         popupHtml?: string;
+        html?: string;
+        icon?: { url: string; width: number; height: number };
       }) => object;
     };
   }
@@ -94,18 +96,30 @@ function RoutePopup({ route, index, onClose }: RoutePopupProps) {
   return (
     <div
       style={{
-        position: "absolute",
-        top: 12,
-        right: 12,
-        zIndex: 999,
-        width: 320,
-        background: "#fff",
-        borderRadius: 12,
-        boxShadow: "0 8px 32px rgba(15,39,71,0.18)",
-        border: "1px solid #e5e7eb",
-        overflow: "hidden",
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(15, 39, 71, 0.4)',
+        backdropFilter: 'blur(4px)',
+        padding: 16,
       }}
+      onClick={onClose}
     >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 400,
+          background: '#fff',
+          borderRadius: 12,
+          boxShadow: '0 8px 32px rgba(15,39,71,0.18)',
+          border: '1px solid #e5e7eb',
+          overflow: 'hidden',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
       {/* Header */}
       <div
         style={{
@@ -250,6 +264,7 @@ function RoutePopup({ route, index, onClose }: RoutePopupProps) {
           </div>
         )}
       </div>
+      </div>
     </div>
   );
 }
@@ -280,6 +295,8 @@ interface MapComponentProps {
     lng: number;
     missionId?: string;
   }>;
+  /** User type for markers */
+  userType?: "driver" | "user";
 }
 
 export default function MapComponent({
@@ -292,6 +309,7 @@ export default function MapComponent({
   height = "calc(100vh - 220px)",
   mode = "routes",
   fleetTrucks = [],
+  userType = "user",
 }: MapComponentProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapplsMap | null>(null);
@@ -379,6 +397,36 @@ export default function MapComponent({
       });
     });
 
+    if (routeList.length > 0) {
+      const firstRoute = routeList[0];
+      const originCoord = firstRoute.coordinates[0];
+      const destCoord = firstRoute.coordinates[firstRoute.coordinates.length - 1];
+      
+      const emoji = userType === 'driver' ? '🚛' : '🚗';
+      
+      // Origin marker with emoji visible directly on map (like Rapido bike icon)
+      new window.mappls.Marker({
+        map: mapRef.current!,
+        position: { lat: originCoord[1], lng: originCoord[0] },
+        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
+          <div style="font-size:32px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));line-height:1">${emoji}</div>
+          <div style="margin-top:2px;background:#0f2747;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2)">You are here</div>
+        </div>`,
+        popupHtml: `<div style="font-size:14px;padding:6px 10px;font-family:inherit"><span style="font-size:20px">${emoji}</span> <strong>You are here</strong></div>`,
+      });
+      
+      // Destination marker with flag emoji
+      new window.mappls.Marker({
+        map: mapRef.current!,
+        position: { lat: destCoord[1], lng: destCoord[0] },
+        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
+          <div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));line-height:1">📍</div>
+          <div style="margin-top:2px;background:#d97706;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2)">Destination</div>
+        </div>`,
+        popupHtml: `<div style="font-size:14px;padding:6px 10px;font-family:inherit"><span style="font-size:20px">📍</span> <strong>Destination</strong></div>`,
+      });
+    }
+
     if (allPoints.length && mapRef.current.fitBounds) {
       mapRef.current.fitBounds(allPoints, {
         padding: 60,
@@ -415,6 +463,27 @@ export default function MapComponent({
         drawFleet(fleetTrucks);
       } else if (originProp && destinationProp) {
         fetchRoutes(originProp, destinationProp);
+      }
+
+      // ── Show live location blue dot (like Google Maps) ────────────────────
+      if (typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (!mapRef.current || !window.mappls) return;
+            new window.mappls.Marker({
+              map: mapRef.current,
+              position: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+              html: `<div style="display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)">
+                <div style="width:18px;height:18px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(66,133,244,0.3),0 2px 6px rgba(0,0,0,0.3);position:relative">
+                  <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(66,133,244,0.15);animation:bluePulse 2s ease-out infinite"></div>
+                </div>
+              </div>
+              <style>@keyframes bluePulse{0%{transform:scale(1);opacity:0.6}100%{transform:scale(2.5);opacity:0}}</style>`,
+            });
+          },
+          () => { /* GPS unavailable — skip blue dot */ },
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
