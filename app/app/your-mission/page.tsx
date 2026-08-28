@@ -23,6 +23,8 @@ interface Mission {
   cargoQuantity?: string;
   origin?: string;
   destination?: string;
+  originAddress?: string;
+  destinationAddress?: string;
   targetArrival?: string;
   status?: string;
 }
@@ -62,6 +64,16 @@ function formatDate(value?: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function isCoordinateString(val?: string): boolean {
+  return !!val && /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(val.trim());
+}
+
+function displayLocation(address?: string, coord?: string): string {
+  if (address && address.trim()) return address;
+  if (coord && !isCoordinateString(coord)) return coord;
+  return "—";
 }
 
 export default function DriverMissionPage() {
@@ -266,11 +278,11 @@ export default function DriverMissionPage() {
                         <div className="space-y-4">
                           <div>
                             <span className="text-[11px] font-semibold uppercase tracking-wider text-subtle">From</span>
-                            <p className="text-[15px] font-semibold text-ink">{(primary.origin || "—").toUpperCase()}</p>
+                            <p className="text-[15px] font-semibold text-ink">{displayLocation(primary.originAddress, primary.origin)}</p>
                           </div>
                           <div>
                             <span className="text-[11px] font-semibold uppercase tracking-wider text-subtle">To</span>
-                            <p className="text-[15px] font-semibold text-ink">{(primary.destination || "—").toUpperCase()}</p>
+                            <p className="text-[15px] font-semibold text-ink">{displayLocation(primary.destinationAddress, primary.destination)}</p>
                           </div>
                         </div>
                       </div>
@@ -310,7 +322,7 @@ export default function DriverMissionPage() {
                         return (
                           <li key={m.missionId || i} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-ink">{m.origin} → {m.destination}</p>
+                              <p className="truncate text-sm font-semibold text-ink">{displayLocation(m.originAddress, m.origin)} → {displayLocation(m.destinationAddress, m.destination)}</p>
                               <p className="font-mono text-[12px] text-subtle">{m.missionId}</p>
                             </div>
                             <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${s.chip}`}>
