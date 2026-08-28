@@ -348,7 +348,12 @@ export default function GovernmentPage() {
         setMissionLoading(false);
         return;
       }
-      setCreatedMission(data?.mission ?? { truckNo: payload.truckNo });
+      const missionResult = data?.mission ?? { truckNo: payload.truckNo };
+      setCreatedMission({
+        ...missionResult,
+        originAddress: missionResult.originAddress || originAddressVal || origin,
+        destinationAddress: missionResult.destinationAddress || destAddressVal || destination,
+      });
       setTruckNo("");
       setCargoQuantity("");
       setOrigin("");
