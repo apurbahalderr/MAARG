@@ -197,7 +197,7 @@ export default function GovernmentPage() {
         const d = await res.json();
         if (!d.success || !d.data) return null;
         const mission = activeMissions.find((m) => m.truckNo === tn);
-        
+
         const loc = d.data.location;
         const lat = loc?.coordinates?.[1] ?? d.data.lat;
         const lng = loc?.coordinates?.[0] ?? d.data.lng;
@@ -215,16 +215,7 @@ export default function GovernmentPage() {
       .map((r) => r.value)
       .filter((t): t is FleetTruck => t !== null);
 
-    if (trucks.length === 0) {
-      // Demo truck positions for demonstration
-      setFleetTrucks([
-        { truckNo: "AS01AB1234", lat: 26.5535, lng: 92.0206, missionId: "M-2026-0042" },
-        { truckNo: "AS02CD5678", lat: 27.4712, lng: 94.9120, missionId: "M-2026-0043" },
-        { truckNo: "AS03EF9012", lat: 25.5788, lng: 91.8933, missionId: "M-2026-0041" },
-      ]);
-    } else {
-      setFleetTrucks(trucks);
-    }
+    setFleetTrucks(trucks);
   }, []);
 
   // Load missions when "missions" or "fleet" tab becomes active
