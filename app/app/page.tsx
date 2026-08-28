@@ -345,7 +345,7 @@ export default function HomePage() {
         {(!isClient || !isLoggedIn) && (
           <section className="w-full bg-surface">
             <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-8 lg:px-12">
-              <div className="flex flex-col items-center justify-between gap-5 rounded-card border border-line bg-canvas p-8 text-center sm:flex-row sm:text-left">
+              <div className="flex flex-col items-center justify-between gap-5 rounded-cardcd border border-line bg-canvas p-8 text-center sm:flex-row sm:text-left">
                 <div>
                   <h3 className="text-xl font-semibold text-navy">
                     Ready to plan a safer route?
