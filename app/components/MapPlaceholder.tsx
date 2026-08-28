@@ -54,9 +54,7 @@ export default function MapPlaceholder({
             <Icon name="navigation" size={13} />
             Live route intelligence
           </span>
-          <h3 className="mt-0.5 text-lg font-semibold text-navy">
-            Accessibility map · {origin} to {destination}
-          </h3>
+          
         </div>
       </div>
 

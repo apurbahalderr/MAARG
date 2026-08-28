@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (!body) {
       return NextResponse.json(
         { message: "Request body is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
           message: "Validation failed",
           errors: parsed.error.flatten(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     if (!process.env.MONGODB_URI) {
       return NextResponse.json(
         { message: "Database is not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -96,8 +96,11 @@ export async function POST(req: NextRequest) {
 
     if (normalizedRoles.includes("driver") && !driverProfile) {
       return NextResponse.json(
-        { message: "Driver profile with a truck number is required for driver accounts" },
-        { status: 400 }
+        {
+          message:
+            "Driver profile with a truck number is required for driver accounts",
+        },
+        { status: 400 },
       );
     }
 
@@ -110,7 +113,7 @@ export async function POST(req: NextRequest) {
         {
           message: "A user with this email or phone number already exists",
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -133,7 +136,7 @@ export async function POST(req: NextRequest) {
         message: "User registered successfully",
         user: userObject,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Register error:", error);
@@ -142,7 +145,7 @@ export async function POST(req: NextRequest) {
       {
         message: "Something went wrong while registering the user",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

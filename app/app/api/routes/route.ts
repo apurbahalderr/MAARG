@@ -13,9 +13,16 @@ function formatDuration(seconds: number): string {
 
 /** Generate deterministic synthetic features for a segment (mirrors the Python
  *  generate_synthetic_features logic so the ML model gets plausible input) */
-function syntheticFeatures(segIdx: number, routeId: string, distKm: number, durationSeconds: number) {
+function syntheticFeatures(
+  segIdx: number,
+  routeId: string,
+  distKm: number,
+  durationSeconds: number,
+) {
   // Simple deterministic hash-like seed: sum of char codes of routeId + segIdx
-  const seed = (routeId + segIdx).split("").reduce((a, c) => a + c.charCodeAt(0), 0) * (segIdx + 1);
+  const seed =
+    (routeId + segIdx).split("").reduce((a, c) => a + c.charCodeAt(0), 0) *
+    (segIdx + 1);
   const h = Math.abs(seed);
   const slope = 5 + (h % 20);
   const rain = h % 100;
@@ -55,7 +62,12 @@ function syntheticFeatures(segIdx: number, routeId: string, distKm: number, dura
 /** Score routes via ML model at localhost:8001/predict/risk.
  *  Falls back to placeholder scores if ML is unavailable. */
 async function scoreRoutesWithML(
-  routes: Array<{ route_id: string; distKm: number; durationSeconds: number; coordCount: number }>
+  routes: Array<{
+    route_id: string;
+    distKm: number;
+    durationSeconds: number;
+    coordCount: number;
+  }>,
 ): Promise<number[]> {
   // Build payload: ~5 segments per route for performance
   const SEGMENTS_PER_ROUTE = 5;
@@ -64,7 +76,12 @@ async function scoreRoutesWithML(
       route_id: r.route_id,
       segments: Array.from({ length: SEGMENTS_PER_ROUTE }, (_, i) => ({
         segment_id: `${r.route_id}_s${i}`,
-        features: syntheticFeatures(i, r.route_id, r.distKm / SEGMENTS_PER_ROUTE, r.durationSeconds / SEGMENTS_PER_ROUTE),
+        features: syntheticFeatures(
+          i,
+          r.route_id,
+          r.distKm / SEGMENTS_PER_ROUTE,
+          r.durationSeconds / SEGMENTS_PER_ROUTE,
+        ),
       })),
     })),
   };
@@ -80,16 +97,22 @@ async function scoreRoutesWithML(
     const data = await res.json();
     // data.routes[i].disruption_risk is in [0,1]
     return (data.routes as Array<{ disruption_risk: number }>).map((r) =>
-      Math.round(r.disruption_risk * 100)
+      Math.round(r.disruption_risk * 100),
     );
   } catch (err) {
-    console.warn("[/api/routes] ML API unavailable, using placeholder scores:", err);
+    console.warn(
+      "[/api/routes] ML API unavailable, using placeholder scores:",
+      err,
+    );
     // Fallback: safest route first
     return routes.map((_, i) => [18, 46, 82][i] ?? 50);
   }
 }
 
-function classifyRisk(score: number): { level: "LOW" | "MEDIUM" | "HIGH"; color: string } {
+function classifyRisk(score: number): {
+  level: "LOW" | "MEDIUM" | "HIGH";
+  color: string;
+} {
   if (score <= 30) return { level: "LOW", color: "#22c55e" };
   if (score <= 60) return { level: "MEDIUM", color: "#f59e0b" };
   return { level: "HIGH", color: "#ef4444" };
@@ -118,7 +141,10 @@ function riskReasons(risk: "LOW" | "MEDIUM" | "HIGH", index: number): string[] {
 
 export async function GET(req: Request) {
   if (!MAPPLS_KEY) {
-    return NextResponse.json({ error: "MAPPLS_KEY is not configured" }, { status: 500 });
+    return NextResponse.json(
+      { error: "MAPPLS_KEY is not configured" },
+      { status: 500 },
+    );
   }
 
   const { searchParams } = new URL(req.url);
@@ -128,7 +154,7 @@ export async function GET(req: Request) {
   if (!origin || !dest) {
     return NextResponse.json(
       { error: "Missing query params: origin and dest (format: lng,lat)" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -161,9 +187,38 @@ export async function GET(req: Request) {
     const [originLng, originLat] = origin.split(",").map(Number);
     const [destLng, destLat] = dest.split(",").map(Number);
     rawRoutes = [
-      { geometry: { coordinates: [[originLng, originLat], [destLng, destLat]] }, distance: 420000, duration: 29400 },
-      { geometry: { coordinates: [[originLng, originLat], [(originLng + destLng) / 2 + 0.1, (originLat + destLat) / 2], [destLng, destLat]] }, distance: 395000, duration: 27000 },
-      { geometry: { coordinates: [[originLng, originLat], [(originLng + destLng) / 2 - 0.1, (originLat + destLat) / 2], [destLng, destLat]] }, distance: 370000, duration: 25200 },
+      {
+        geometry: {
+          coordinates: [
+            [originLng, originLat],
+            [destLng, destLat],
+          ],
+        },
+        distance: 420000,
+        duration: 29400,
+      },
+      {
+        geometry: {
+          coordinates: [
+            [originLng, originLat],
+            [(originLng + destLng) / 2 + 0.1, (originLat + destLat) / 2],
+            [destLng, destLat],
+          ],
+        },
+        distance: 395000,
+        duration: 27000,
+      },
+      {
+        geometry: {
+          coordinates: [
+            [originLng, originLat],
+            [(originLng + destLng) / 2 - 0.1, (originLat + destLat) / 2],
+            [destLng, destLat],
+          ],
+        },
+        distance: 370000,
+        duration: 25200,
+      },
     ];
   }
 
@@ -178,7 +233,11 @@ export async function GET(req: Request) {
   const riskScores = await scoreRoutesWithML(mlInput);
 
   // Sort so lowest risk is route 1 (recommended)
-  const indexed = rawRoutes.map((r, i) => ({ r, score: riskScores[i] ?? 50, i }));
+  const indexed = rawRoutes.map((r, i) => ({
+    r,
+    score: riskScores[i] ?? 50,
+    i,
+  }));
   indexed.sort((a, b) => a.score - b.score);
 
   const routes = indexed.map(({ r, score }, rankIdx) => {
@@ -197,8 +256,8 @@ export async function GET(req: Request) {
         risk.level === "LOW"
           ? "Fully operational — no delay expected"
           : risk.level === "MEDIUM"
-          ? "Approx. 6–8 hours to clear any bottleneck"
-          : "Approx. 18–24 hours for heavy-machinery clearing",
+            ? "Approx. 6–8 hours to clear any bottleneck"
+            : "Approx. 18–24 hours for heavy-machinery clearing",
     };
   });
 
