@@ -47,9 +47,9 @@
   /* Radii — crisper than before */
   --radius-card: 10px;
 
-  /* Fonts (variables set by next/font in layout.tsx) */
-  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  /* Fonts (variables set by next/font in layout.tsx -> --font-geist-sans / --font-geist-mono) */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
 /* =========================================================

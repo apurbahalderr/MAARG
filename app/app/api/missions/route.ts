@@ -52,6 +52,8 @@ const createMissionSchema = z.object({
   cargoQuantity: z.string().trim().min(1, "Cargo quantity is required"),
   origin: z.string().trim().min(1, "Origin is required"),
   destination: z.string().trim().min(1, "Destination is required"),
+  originAddress: z.string().trim().max(500).optional(),
+  destinationAddress: z.string().trim().max(500).optional(),
   targetArrival: z.coerce.date(),
 });
 

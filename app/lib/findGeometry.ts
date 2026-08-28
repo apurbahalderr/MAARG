@@ -20,7 +20,7 @@ const url =
   `https://route.mappls.com/route/direction/` +
   `route_adv/trucking/${origin};${dest}` +
   `?geometries=geojson` +
-  `alternatives=3`+
+  `&alternatives=3`+
   `&steps=true` +
   `&access_token=${MAPPLS_KEY}`;
 
