@@ -24,6 +24,11 @@ type MLRouteResult = {
   route_id: string;
   disruption_risk: number;
   risk_band: "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
+  // Optional: present on waypoint-detour routes added by ML when a route is blocked
+  new_geometry?: { type: string; coordinates: Coordinate[] };
+  new_distance?: number;
+  new_duration?: number;
+  blocked_by_incident?: string;
 };
 
 function extractCandidates(raw: unknown): CandidateRoute[] {
@@ -105,9 +110,12 @@ function extractCandidates(raw: unknown): CandidateRoute[] {
 
 async function scoreCandidates(
   incident: IIncident,
-  candidates: CandidateRoute[]
+  candidates: CandidateRoute[],
+  origin: string,
+  dest: string
 ): Promise<MLRouteResult[]> {
   const mlUrl = process.env.ML_SERVICE_URL ?? process.env.ML_API_URL ?? "http://localhost:8001";
+  const mapplsKey = process.env.MAPPLS_KEY ?? "";
   const response = await fetch(`${mlUrl}/predict/reroute`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -120,6 +128,9 @@ async function scoreCandidates(
         occurred_at: incident.occurredAt.toISOString(),
       },
       routes: candidates,
+      origin,
+      dest,
+      mappls_key: mapplsKey,
     }),
   });
 
@@ -128,8 +139,8 @@ async function scoreCandidates(
   }
 
   const data = (await response.json()) as { routes?: MLRouteResult[] };
-  if (!Array.isArray(data.routes) || data.routes.length !== candidates.length) {
-    throw new Error("ML reroute response did not score every candidate route");
+  if (!Array.isArray(data.routes) || data.routes.length === 0) {
+    throw new Error("ML reroute response returned no scored routes");
   }
   return data.routes;
 }
@@ -158,7 +169,9 @@ async function rerouteMission(incident: IIncident, missionId: string) {
     candidates.splice(MAX_ALTERNATIVES);
   }
 
-  const scores = await scoreCandidates(incident, candidates);
+  // Pass mission origin/dest so ML can generate waypoint detours for blocked routes
+  const scores = await scoreCandidates(incident, candidates, mission.origin, mission.destination);
+
   const latestRoute = await Route.findOne({ missionId })
     .sort({ routeVersion: -1 })
     .select("routeVersion")
@@ -170,27 +183,46 @@ async function rerouteMission(incident: IIncident, missionId: string) {
     { $set: { status: "SUPERSEDED" } }
   );
 
-  await Route.insertMany(
-    candidates.map((candidate, index) => {
-      const score = scores[index];
-      return {
-        routeId: `${generateID("R")}-${index + 1}`,
-        missionId,
-        truckNo: mission.truckNo,
-        routeVersion: nextVersion,
-        alternativeRank: index + 1,
-        geometry: candidate.geometry,
-        distanceMeters: candidate.distanceMeters,
-        durationSeconds: candidate.durationSeconds,
-        riskScore: Math.round(score.disruption_risk * 100),
-        riskBand: score.risk_band,
-        status: "ACTIVE",
-        triggeredByIncidentId: incident.incidentId,
-      };
-    })
-  );
+  // ML may return more routes than candidates (detour routes are appended)
+  // Build a map from routeId to its original candidate for geometry fallback
+  const candidateMap = new Map(candidates.map((c) => [c.routeId, c]));
 
-  return { missionId, routeVersion: nextVersion, routeCount: candidates.length };
+  const routeDocuments = scores.map((score, index) => {
+    // Find original candidate geometry; for detour routes (_detour suffix), use the ML-provided new geometry
+    const baseRouteId = score.route_id.replace(/_detour$/, "");
+    const original = candidateMap.get(baseRouteId) ?? candidates[0];
+    const isDetour = score.route_id.endsWith("_detour");
+
+    // Detour routes come with new geometry from Mappls via waypoint; use that if available
+    const geometry = isDetour && score.new_geometry
+      ? score.new_geometry
+      : original.geometry;
+    const distanceMeters = isDetour && score.new_distance
+      ? score.new_distance
+      : original.distanceMeters;
+    const durationSeconds = isDetour && score.new_duration
+      ? score.new_duration
+      : original.durationSeconds;
+
+    return {
+      routeId: `${generateID("R")}-${index + 1}`,
+      missionId,
+      truckNo: mission.truckNo,
+      routeVersion: nextVersion,
+      alternativeRank: index + 1,
+      geometry,
+      distanceMeters,
+      durationSeconds,
+      riskScore: Math.round(score.disruption_risk * 100),
+      riskBand: score.risk_band,
+      status: "ACTIVE" as const,
+      triggeredByIncidentId: incident.incidentId,
+    };
+  });
+
+  await Route.insertMany(routeDocuments);
+
+  return { missionId, routeVersion: nextVersion, routeCount: routeDocuments.length };
 }
 
 export async function rerouteRoutesForIncident(incidentId: string) {

@@ -576,9 +576,9 @@ export default function GovernmentPage() {
                                 </div>
                                 <button
                                   type="button"
-                                  disabled={selectingIdx !== null}
+                                  disabled={selectingIdx !== null || r.riskScore === 100}
                                   onClick={async () => {
-                                    if (selectingIdx !== null) return;
+                                    if (selectingIdx !== null || r.riskScore === 100) return;
                                     // Validate mission form completeness
                                     if (!truckNo.trim() || !cargoQuantity.trim() || !origin.trim() || !destination.trim() || !targetArrival) {
                                       setSelectError("Fill truck, cargo, origin, destination and target arrival before selecting a route.");
@@ -629,9 +629,9 @@ export default function GovernmentPage() {
                                       setSelectError(String(e?.message || "Unable to reach server."));
                                     } finally { setSelectingIdx(null); }
                                   }}
-                                  className={`shrink-0 rounded-md px-4 py-2 text-xs font-bold ${selectingIdx===idx ? "bg-line text-muted" : "bg-india text-white hover:bg-india-600"}`}
+                                  className={`shrink-0 rounded-md px-4 py-2 text-xs font-bold ${selectingIdx===idx ? "bg-line text-muted" : r.riskScore === 100 ? "bg-danger text-white cursor-not-allowed opacity-60" : "bg-india text-white hover:bg-india-600"}`}
                                 >
-                                  {selectingIdx===idx ? "Saving…" : "Select"}
+                                  {selectingIdx===idx ? "Saving…" : r.riskScore === 100 ? "UNSAFE" : "Select"}
                                 </button>
                               </div>
                             ))}
@@ -654,10 +654,10 @@ export default function GovernmentPage() {
                       <>
                         <div className="overflow-hidden rounded-card border border-line">
                           <MapComponent
-                            key={originCoords ? `${originCoords.lon},${originCoords.lat}-${destCoords!.lon},${destCoords!.lat}` : "empty"}
+                            key={originCoords && destCoords ? `${originCoords.lon},${originCoords.lat}-${destCoords.lon},${destCoords.lat}` : `${origin}-${destination}`}
                             mode="routes"
-                            origin={`${originCoords!.lon},${originCoords!.lat}`}
-                            destination={`${destCoords!.lon},${destCoords!.lat}`}
+                            origin={originCoords ? `${originCoords.lon},${originCoords.lat}` : origin}
+                            destination={destCoords ? `${destCoords.lon},${destCoords.lat}` : destination}
                             height="580px"
                             showControls={false}
                           />

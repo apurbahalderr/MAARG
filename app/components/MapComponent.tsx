@@ -33,12 +33,22 @@ declare global {
         strokeOpacity: number;
       }) => object;
       Marker: new (options: {
-        map: MapplsMap;
-        position: { lat: number; lng: number };
+        map: MapplsMap | null;
+        position: { lat: number; lng: number } | [number, number];
         fitBounds?: boolean;
         popupHtml?: string;
         html?: string;
         icon?: { url: string; width: number; height: number };
+      }) => object;
+      Circle: new (options: {
+        map: MapplsMap | null;
+        center: [number, number];
+        radius: number;
+        fillColor?: string;
+        fillOpacity?: number;
+        strokeColor?: string;
+        strokeOpacity?: number;
+        strokeWeight?: number;
       }) => object;
     };
   }
@@ -313,6 +323,7 @@ export default function MapComponent({
 }: MapComponentProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapplsMap | null>(null);
+  const overlaysRef = useRef<any[]>([]);
   const [sdkReady, setSdkReady] = useState(false);
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [source, setSource] = useState(originProp);
@@ -369,7 +380,7 @@ export default function MapComponent({
           : [];
         setRoutes(fetchedRoutes);
         onRoutesLoaded?.(fetchedRoutes);
-        drawRoutes(fetchedRoutes);
+        drawRoutes(fetchedRoutes, data.incidents || []);
       } catch {
         setMapError("Route service unavailable. Showing sample data.");
       } finally {
@@ -381,31 +392,82 @@ export default function MapComponent({
   );
 
   // ── Draw polylines on the map ─────────────────────────────────────────────
-  function drawRoutes(routeList: RouteData[]) {
+  function drawRoutes(routeList: RouteData[], incidents: any[] = []) {
     if (!mapRef.current || !window.mappls) return;
+
+    // Clear all previous overlays (polylines, circles, markers) from map
+    if (overlaysRef.current && overlaysRef.current.length > 0) {
+      overlaysRef.current.forEach((item) => {
+        try {
+          if (typeof item.remove === "function") {
+            item.remove();
+          } else if (mapRef.current && typeof (mapRef.current as any).removeLayer === "function") {
+            (mapRef.current as any).removeLayer(item);
+          }
+        } catch {}
+      });
+      overlaysRef.current = [];
+    }
+
     const allPoints: { lat: number; lng: number }[] = [];
 
-    routeList.forEach((route) => {
-      const path = route.coordinates.map(([lng, lat]) => ({ lat, lng }));
-      allPoints.push(...path);
-      new window.mappls.Polyline({
-        map: mapRef.current!,
-        path,
-        strokeColor: route.color,
-        strokeWeight: route.risk === "LOW" ? 7 : 4,
-        strokeOpacity: 0.9,
+    // 1. Draw 1km incident impact circles and warning markers
+    incidents.forEach((inc) => {
+      if (!inc.location || !inc.location.coordinates) return;
+      const [lng, lat] = inc.location.coordinates;
+
+      const circle = new window.mappls.Circle({
+        map: mapRef.current,
+        center: [lat, lng],
+        radius: 1000,
+        fillColor: "#ef4444",
+        fillOpacity: 0.25,
+        strokeColor: "#b91c1c",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
       });
+      overlaysRef.current.push(circle);
+
+      const marker = new window.mappls.Marker({
+        map: mapRef.current,
+        position: { lat, lng },
+        html: `<div style="background: white; padding: 4px 8px; border-radius: 12px; border: 2px solid #ef4444; font-size: 12px; font-weight: bold; color: #ef4444; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transform: translate(-50%, -150%);">
+                 ⚠️ ${inc.type || inc.incidentId || 'Incident'}
+               </div>`,
+        popupHtml: `<div style="font-size:13px;padding:6px 10px;font-family:inherit"><strong>⚠️ ${inc.type || 'Incident'}</strong><br/>Severity: ${inc.severity || '—'}<br/>Impact Radius: 1.0 km<br/>Status: ${inc.status || '—'}</div>`,
+      });
+      overlaysRef.current.push(marker);
     });
 
+    // 2. Sort routes so blocked/high risk are drawn on the bottom, and recommended safe route is drawn on top
+    const sortedRoutesToDraw = [...routeList].sort((a, b) => b.riskScore - a.riskScore);
+
+    sortedRoutesToDraw.forEach((route) => {
+      const path = route.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      allPoints.push(...path);
+
+      const isRec = route.isRecommended || route.risk === "LOW";
+      const isCritical = route.riskScore >= 75 || route.risk === "HIGH";
+
+      const polyline = new window.mappls.Polyline({
+        map: mapRef.current!,
+        path,
+        strokeColor: route.color || (isCritical ? "#dc2626" : isRec ? "#16a34a" : "#d97706"),
+        strokeWeight: isRec ? 7 : 4,
+        strokeOpacity: isRec ? 0.95 : 0.75,
+      });
+      overlaysRef.current.push(polyline);
+    });
+
+    // 3. Draw origin and destination markers on top
     if (routeList.length > 0) {
       const firstRoute = routeList[0];
       const originCoord = firstRoute.coordinates[0];
       const destCoord = firstRoute.coordinates[firstRoute.coordinates.length - 1];
-      
+
       const emoji = userType === 'driver' ? '🚛' : '🚗';
-      
-      // Origin marker with emoji visible directly on map (like Rapido bike icon)
-      new window.mappls.Marker({
+
+      const origMarker = new window.mappls.Marker({
         map: mapRef.current!,
         position: { lat: originCoord[1], lng: originCoord[0] },
         html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
@@ -414,9 +476,9 @@ export default function MapComponent({
         </div>`,
         popupHtml: `<div style="font-size:14px;padding:6px 10px;font-family:inherit"><span style="font-size:20px">${emoji}</span> <strong>You are here</strong></div>`,
       });
-      
-      // Destination marker with flag emoji
-      new window.mappls.Marker({
+      overlaysRef.current.push(origMarker);
+
+      const destMarker = new window.mappls.Marker({
         map: mapRef.current!,
         position: { lat: destCoord[1], lng: destCoord[0] },
         html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
@@ -425,6 +487,7 @@ export default function MapComponent({
         </div>`,
         popupHtml: `<div style="font-size:14px;padding:6px 10px;font-family:inherit"><span style="font-size:20px">📍</span> <strong>Destination</strong></div>`,
       });
+      overlaysRef.current.push(destMarker);
     }
 
     if (allPoints.length && mapRef.current.fitBounds) {
