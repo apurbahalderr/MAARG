@@ -286,7 +286,7 @@ export default function HomePage() {
               {CAPABILITIES.map((feature) => (
                 <div
                   key={feature.title}
-                  className="rounded-[10px] border border-line bg-surface p-6 transition-colors hover:border-line-strong"
+                  className="rounded-card border border-line bg-surface p-6 transition-colors hover:border-line-strong"
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-wash text-primary">
                     <Icon name={feature.icon} size={22} />
@@ -319,7 +319,7 @@ export default function HomePage() {
               {WORKFLOW.map((item) => (
                 <div
                   key={item.step}
-                  className="rounded-[10px] border border-line bg-surface p-6"
+                  className="rounded-card border border-line bg-surface p-6"
                 >
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-wash text-primary">
@@ -345,7 +345,7 @@ export default function HomePage() {
         {(!isClient || !isLoggedIn) && (
           <section className="w-full bg-surface">
             <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-8 lg:px-12">
-              <div className="flex flex-col items-center justify-between gap-5 rounded-[10px] border border-line bg-canvas p-8 text-center sm:flex-row sm:text-left">
+              <div className="flex flex-col items-center justify-between gap-5 rounded-card border border-line bg-canvas p-8 text-center sm:flex-row sm:text-left">
                 <div>
                   <h3 className="text-xl font-semibold text-navy">
                     Ready to plan a safer route?
