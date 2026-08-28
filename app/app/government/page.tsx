@@ -111,10 +111,15 @@ export default function GovernmentPage() {
   const [cargoQuantity, setCargoQuantity] = useState("");
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
+  const [originCoords, setOriginCoords] = useState<{ lat: string; lon: string } | null>(null);
+  const [destCoords, setDestCoords] = useState<{ lat: string; lon: string } | null>(null);
   const [targetArrival, setTargetArrival] = useState("");
   const [missionLoading, setMissionLoading] = useState(false);
   const [missionError, setMissionError] = useState<string | null>(null);
   const [createdMission, setCreatedMission] = useState<CreatedMission | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const [routeCreated, setRouteCreated] = useState(false);
 
   // Missions list state
   const [missions, setMissions] = useState<Mission[]>([]);
@@ -359,108 +364,171 @@ export default function GovernmentPage() {
 
               {/* ── Tab: Create mission ── */}
               {activeTab === "create" && (
-                <div className="mx-auto max-w-2xl rounded-card border border-line bg-surface p-7">
-                  <div className="mb-5 border-b border-line pb-4">
-                    <h1 className="text-xl font-bold tracking-tight text-navy">Create logistics mission</h1>
-                    <p className="mt-1 text-sm text-muted">Assign a truck to a priority cargo route.</p>
+                <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+                  {/* Left: form */}
+                  <div className="lg:col-span-5">
+                    <div className="rounded-card border border-line bg-surface p-7">
+                      <div className="mb-5 border-b border-line pb-4">
+                        <h1 className="text-xl font-bold tracking-tight text-navy">Create logistics mission</h1>
+                        <p className="mt-1 text-sm text-muted">Assign a truck to a priority cargo route.</p>
+                      </div>
+
+                      {createdMission && (
+                        <div className="mb-5 rounded-md border border-safe-line bg-safe-bg p-4">
+                          <p className="flex items-center gap-2 text-sm font-semibold text-safe">
+                            <Icon name="checkCircle" size={17} />
+                            Mission created — driver will see it immediately on their mission screen.
+                          </p>
+                          <div className="mt-2.5 grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] text-ink">
+                            {createdMission.missionId && <p><span className="text-muted">ID: </span><strong className="font-mono">{createdMission.missionId}</strong></p>}
+                            {createdMission.truckNo && <p><span className="text-muted">Truck: </span><strong className="font-mono">{createdMission.truckNo}</strong></p>}
+                            {createdMission.origin && <p><span className="text-muted">From: </span><strong>{createdMission.origin}</strong></p>}
+                            {createdMission.destination && <p><span className="text-muted">To: </span><strong>{createdMission.destination}</strong></p>}
+                          </div>
+                        </div>
+                      )}
+
+                      <form onSubmit={handleCreateMission} className="space-y-4">
+                        {missionError && (
+                          <div role="alert" className="flex items-start gap-2.5 rounded-md border border-danger-line bg-danger-bg p-3 text-[13px] font-medium text-danger">
+                            <Icon name="alertTriangle" size={16} className="mt-0.5 shrink-0" />
+                            <span>{missionError}</span>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label htmlFor="truckNo" className={labelClass}>Truck number</label>
+                            <input id="truckNo" type="text" value={truckNo} onChange={(e) => setTruckNo(e.target.value)} placeholder="AS01AB1234" className={`${inputClass} uppercase`} required />
+                          </div>
+                          <div>
+                            <label htmlFor="cargoType" className={labelClass}>Cargo type</label>
+                            <select id="cargoType" value={cargoType} onChange={(e) => setCargoType(e.target.value)} className={inputClass}>
+                              {CARGO_TYPES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label htmlFor="cargoQuantity" className={labelClass}>Cargo quantity</label>
+                            <input id="cargoQuantity" type="text" value={cargoQuantity} onChange={(e) => setCargoQuantity(e.target.value)} placeholder="e.g. 12 tonnes / 500 units" className={inputClass} required />
+                          </div>
+                          <div>
+                            <label htmlFor="targetArrival" className={labelClass}>Target arrival</label>
+                            <input id="targetArrival" type="datetime-local" value={targetArrival} onChange={(e) => setTargetArrival(e.target.value)} className={inputClass} required />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div className="relative">
+                            <label htmlFor="origin" className={labelClass}>Origin</label>
+                            <div className="relative">
+                              <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                                {originSearchLoading
+                                  ? <svg className="h-4 w-4 animate-spin text-subtle" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                                  : <Icon name="mapPin" size={16} className="text-subtle" />}
+                              </div>
+                              <input id="origin" type="text" value={origin} onChange={(e) => { setOrigin(e.target.value); setOriginCoords(null); searchPlace(e.target.value, setOriginSuggestions, setOriginSearchLoading, originDebounce); }} placeholder="Search origin — e.g. Guwahati" className={`${inputClass} pl-9`} autoComplete="off" required />
+                              {originSuggestions.length > 0 && (
+                                <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
+                                  {originSuggestions.map((r) => (
+                                    <li key={r.place_id}>
+                                      <button type="button" onClick={() => { setOrigin(r.display_name.split(',')[0].trim()); setOriginCoords({ lat: r.lat, lon: r.lon }); setOriginSuggestions([]); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
+                                        <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-india" />
+                                        <span className="line-clamp-2">{r.display_name}</span>
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+                          <div className="relative">
+                            <label htmlFor="destination" className={labelClass}>Destination</label>
+                            <div className="relative">
+                              <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                                {destSearchLoading
+                                  ? <svg className="h-4 w-4 animate-spin text-subtle" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                                  : <Icon name="mapPin" size={16} className="text-subtle" />}
+                              </div>
+                              <input id="destination" type="text" value={destination} onChange={(e) => { setDestination(e.target.value); setDestCoords(null); searchPlace(e.target.value, setDestSuggestions, setDestSearchLoading, destDebounce); }} placeholder="Search destination — e.g. Tawang" className={`${inputClass} pl-9`} autoComplete="off" required />
+                              {destSuggestions.length > 0 && (
+                                <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
+                                  {destSuggestions.map((r) => (
+                                    <li key={r.place_id}>
+                                      <button type="button" onClick={() => { setDestination(r.display_name.split(',')[0].trim()); setDestCoords({ lat: r.lat, lon: r.lon }); setDestSuggestions([]); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
+                                        <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-india" />
+                                        <span className="line-clamp-2">{r.display_name}</span>
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {routeError && (
+                          <p className="text-[12px] text-danger">{routeError}</p>
+                        )}
+                        {routeCreated && (
+                          <p className="flex items-center gap-1.5 text-[12px] font-semibold text-safe">
+                            <Icon name="checkCircle" size={13} />
+                            Route created successfully — visible on map
+                          </p>
+                        )}
+                        <div className="mt-1 grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            disabled={routeLoading || !originCoords || !destCoords}
+                            onClick={async () => {
+                              if (!originCoords || !destCoords) {
+                                setRouteError("Select origin and destination from suggestions first.");
+                                return;
+                              }
+                              setRouteError(null);
+                              setRouteCreated(false);
+                              setRouteLoading(true);
+                              try {
+                                const o = `${originCoords.lon},${originCoords.lat}`;
+                                const d = `${destCoords.lon},${destCoords.lat}`;
+                                const res = await fetch(`/api/routes?origin=${o}&dest=${d}`);
+                                const data = await res.json().catch(() => ({}));
+                                if (!res.ok) {
+                                  setRouteError(data?.error || "Failed to create route.");
+                                } else {
+                                  setRouteCreated(true);
+                                }
+                              } catch {
+                                setRouteError("Unable to reach the server.");
+                              } finally {
+                                setRouteLoading(false);
+                              }
+                            }}
+                            className="flex items-center justify-center gap-2 rounded-md border-2 border-[#166534] bg-white px-4 py-3 text-sm font-semibold text-[#166534] transition-colors hover:bg-[#166534]/5 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {routeLoading ? <span>Creating route…</span> : <><Icon name="route" size={16} /><span>Choose route</span></>}
+                          </button>
+                          <button type="submit" disabled={missionLoading} className="flex items-center justify-center gap-2 rounded-md bg-india px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-india-600 disabled:cursor-not-allowed disabled:opacity-70">
+                            {missionLoading ? <span>Creating…</span> : <><span>Create &amp; assign mission</span><Icon name="arrowRight" size={16} /></>}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
 
-                  {createdMission && (
-                    <div className="mb-5 rounded-md border border-safe-line bg-safe-bg p-4">
-                      <p className="flex items-center gap-2 text-sm font-semibold text-safe">
-                        <Icon name="checkCircle" size={17} />
-                        Mission created — driver will see it immediately on their mission screen.
-                      </p>
-                      <div className="mt-2.5 grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] text-ink">
-                        {createdMission.missionId && <p><span className="text-muted">ID: </span><strong className="font-mono">{createdMission.missionId}</strong></p>}
-                        {createdMission.truckNo && <p><span className="text-muted">Truck: </span><strong className="font-mono">{createdMission.truckNo}</strong></p>}
-                        {createdMission.origin && <p><span className="text-muted">From: </span><strong>{createdMission.origin}</strong></p>}
-                        {createdMission.destination && <p><span className="text-muted">To: </span><strong>{createdMission.destination}</strong></p>}
-                      </div>
+                  {/* Right: live map preview */}
+                  <div className="lg:col-span-7">
+                    <div className="overflow-hidden rounded-card border border-line">
+                      <MapComponent
+                        mode="routes"
+                        origin={origin || "Guwahati"}
+                        destination={destination || "Tawang"}
+                        height="580px"
+                        showControls={false}
+                      />
                     </div>
-                  )}
-
-                  <form onSubmit={handleCreateMission} className="space-y-4">
-                    {missionError && (
-                      <div role="alert" className="flex items-start gap-2.5 rounded-md border border-danger-line bg-danger-bg p-3 text-[13px] font-medium text-danger">
-                        <Icon name="alertTriangle" size={16} className="mt-0.5 shrink-0" />
-                        <span>{missionError}</span>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <label htmlFor="truckNo" className={labelClass}>Truck number</label>
-                        <input id="truckNo" type="text" value={truckNo} onChange={(e) => setTruckNo(e.target.value)} placeholder="AS01AB1234" className={`${inputClass} uppercase`} required />
-                      </div>
-                      <div>
-                        <label htmlFor="cargoType" className={labelClass}>Cargo type</label>
-                        <select id="cargoType" value={cargoType} onChange={(e) => setCargoType(e.target.value)} className={inputClass}>
-                          {CARGO_TYPES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <label htmlFor="cargoQuantity" className={labelClass}>Cargo quantity</label>
-                        <input id="cargoQuantity" type="text" value={cargoQuantity} onChange={(e) => setCargoQuantity(e.target.value)} placeholder="e.g. 12 tonnes / 500 units" className={inputClass} required />
-                      </div>
-                      <div>
-                        <label htmlFor="targetArrival" className={labelClass}>Target arrival</label>
-                        <input id="targetArrival" type="datetime-local" value={targetArrival} onChange={(e) => setTargetArrival(e.target.value)} className={inputClass} required />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="relative">
-                        <label htmlFor="origin" className={labelClass}>Origin</label>
-                        <div className="relative">
-                          <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
-                            {originSearchLoading
-                              ? <svg className="h-4 w-4 animate-spin text-subtle" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
-                              : <Icon name="mapPin" size={16} className="text-subtle" />}
-                          </div>
-                          <input id="origin" type="text" value={origin} onChange={(e) => { setOrigin(e.target.value); searchPlace(e.target.value, setOriginSuggestions, setOriginSearchLoading, originDebounce); }} placeholder="Search origin — e.g. Guwahati" className={`${inputClass} pl-9`} autoComplete="off" required />
-                          {originSuggestions.length > 0 && (
-                            <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
-                              {originSuggestions.map((r) => (
-                                <li key={r.place_id}>
-                                  <button type="button" onClick={() => { setOrigin(r.display_name.split(',')[0].trim()); setOriginSuggestions([]); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
-                                    <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-india" />
-                                    <span className="line-clamp-2">{r.display_name}</span>
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <label htmlFor="destination" className={labelClass}>Destination</label>
-                        <div className="relative">
-                          <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
-                            {destSearchLoading
-                              ? <svg className="h-4 w-4 animate-spin text-subtle" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
-                              : <Icon name="mapPin" size={16} className="text-subtle" />}
-                          </div>
-                          <input id="destination" type="text" value={destination} onChange={(e) => { setDestination(e.target.value); searchPlace(e.target.value, setDestSuggestions, setDestSearchLoading, destDebounce); }} placeholder="Search destination — e.g. Tawang" className={`${inputClass} pl-9`} autoComplete="off" required />
-                          {destSuggestions.length > 0 && (
-                            <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
-                              {destSuggestions.map((r) => (
-                                <li key={r.place_id}>
-                                  <button type="button" onClick={() => { setDestination(r.display_name.split(',')[0].trim()); setDestSuggestions([]); }} className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash">
-                                    <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-india" />
-                                    <span className="line-clamp-2">{r.display_name}</span>
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <button type="submit" disabled={missionLoading} className="mt-1 flex w-full items-center justify-center gap-2 rounded-md bg-india px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-india-600 disabled:cursor-not-allowed disabled:opacity-70">
-                      {missionLoading ? <span>Creating mission…</span> : <><span>Create &amp; assign mission</span><Icon name="arrowRight" size={16} /></>}
-                    </button>
-                  </form>
+                    <p className="mt-2 text-center text-[12px] text-subtle">
+                      Map auto-updates as you type origin &amp; destination
+                    </p>
+                  </div>
                 </div>
               )}
 
