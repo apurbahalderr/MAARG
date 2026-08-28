@@ -28,9 +28,42 @@ type MLRouteResult = {
 
 function extractCandidates(raw: unknown): CandidateRoute[] {
   const response = raw as {
+    routes?: Array<{
+      geometry?: { coordinates?: unknown };
+      distance?: unknown;
+      duration?: unknown;
+    }>;
     trip?: Record<string, unknown>;
     alternates?: Array<{ trip?: Record<string, unknown> }>;
   };
+  if (Array.isArray(response.routes)) {
+    return response.routes.slice(0, MAX_ALTERNATIVES).map((route, index) => {
+      const coordinates = route.geometry?.coordinates;
+      if (!Array.isArray(coordinates) || coordinates.length < 2) {
+        throw new Error(`Mappls route ${index + 1} has no usable GeoJSON geometry`);
+      }
+
+      const normalizedCoordinates = coordinates.map((coordinate) => {
+        if (
+          !Array.isArray(coordinate) ||
+          coordinate.length < 2 ||
+          typeof coordinate[0] !== "number" ||
+          typeof coordinate[1] !== "number"
+        ) {
+          throw new Error(`Mappls route ${index + 1} contains invalid coordinates`);
+        }
+        return [coordinate[0], coordinate[1]] as Coordinate;
+      });
+
+      return {
+        routeId: index === 0 ? "primary" : `alternative_${index}`,
+        geometry: { type: "LineString", coordinates: normalizedCoordinates },
+        distanceMeters: Number(route.distance ?? 0),
+        durationSeconds: Number(route.duration ?? 0),
+      };
+    });
+  }
+
   const trips = [
     response.trip,
     ...(response.alternates ?? []).map((alternate) => alternate.trip),
@@ -74,7 +107,7 @@ async function scoreCandidates(
   incident: IIncident,
   candidates: CandidateRoute[]
 ): Promise<MLRouteResult[]> {
-  const mlUrl = process.env.ML_SERVICE_URL ?? "http://localhost:8001";
+  const mlUrl = process.env.ML_SERVICE_URL ?? process.env.ML_API_URL ?? "http://localhost:8001";
   const response = await fetch(`${mlUrl}/predict/reroute`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -118,8 +151,11 @@ async function rerouteMission(incident: IIncident, missionId: string) {
   }
 
   const candidates = extractCandidates(rawMapplsResponse);
-  if (candidates.length !== MAX_ALTERNATIVES) {
-    throw new Error(`Mappls returned ${candidates.length} routes; expected 3`);
+  if (candidates.length === 0) {
+    throw new Error(`Mappls returned 0 routes; expected 1-${MAX_ALTERNATIVES}`);
+  }
+  if (candidates.length > MAX_ALTERNATIVES) {
+    candidates.splice(MAX_ALTERNATIVES);
   }
 
   const scores = await scoreCandidates(incident, candidates);
@@ -138,7 +174,7 @@ async function rerouteMission(incident: IIncident, missionId: string) {
     candidates.map((candidate, index) => {
       const score = scores[index];
       return {
-        routeId: generateID("R"),
+        routeId: `${generateID("R")}-${index + 1}`,
         missionId,
         truckNo: mission.truckNo,
         routeVersion: nextVersion,

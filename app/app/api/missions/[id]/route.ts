@@ -1,11 +1,17 @@
 import { connectDB } from "@/lib/connectDB";
 import { Mission } from "@/models/mission";
 import { NextRequest } from "next/server";
+import { verifyJWT } from "@/utils/verifyJWT";
 
 
 // this api route is used to get a single mission by id
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const tokenPayload = verifyJWT(req);
+        if (!tokenPayload) {
+            return new Response(JSON.stringify({ success: false, message: "Authentication required" }), { status: 401 });
+        }
+
         const id = (await params).id;
 
         if (!id) {

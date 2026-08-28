@@ -22,8 +22,12 @@ export interface IMission extends Document {
   cargoType: CargoType;
   cargoQuantity: string;
 
+  // coordinates of the origin and destination locations
   origin: string;
   destination: string;
+
+  originAddress?: string;
+  destinationAddress?: string;
 
   targetArrival: Date;
   status: MissionStatus;
@@ -78,6 +82,16 @@ const missionSchema = new Schema<IMission>(
     destination: {
       type: String,
       required: true,
+    },
+
+    originAddress: {
+      type: String,
+      trim: true,
+    },
+
+    destinationAddress: {
+      type: String,
+      trim: true,
     },
 
     targetArrival: {
