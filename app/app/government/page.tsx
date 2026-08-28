@@ -196,7 +196,7 @@ export default function GovernmentPage() {
         const d = await res.json();
         if (!d.success || !d.data) return null;
         const mission = activeMissions.find((m) => m.truckNo === tn);
-        
+
         const loc = d.data.location;
         const lat = loc?.coordinates?.[1] ?? d.data.lat;
         const lng = loc?.coordinates?.[0] ?? d.data.lng;
@@ -645,7 +645,7 @@ export default function GovernmentPage() {
                   {/* Right: live map preview — empty until Choose route */}
                   <div className="lg:col-span-7">
                     {!fetchedRoutes ? (
-                      <div className="flex h-[580px] w-full flex-col items-center justify-center rounded-card border border-dashed border-line bg-canvas p-8 text-center">
+                      <div className="flex h-145 w-full flex-col items-center justify-center rounded-card border border-dashed border-line bg-canvas p-8 text-center">
                         <Icon name="mapPin" size={28} className="text-subtle" />
                         <p className="mt-3 text-sm font-semibold text-navy">No route preview yet</p>
                         <p className="mt-1 max-w-sm text-[13px] text-muted">Search origin & destination via Mappls, then click <strong>Choose route</strong> to fetch alternatives. Map will appear here.</p>
