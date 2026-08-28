@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -8,6 +8,13 @@ import RouteStatusBadge from "@/components/RouteStatusBadge";
 import Icon from "@/components/Icon";
 import dynamic from "next/dynamic";
 import type { RouteData } from "@/components/MapComponent";
+
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+}
 
 // Dynamically import MapComponent to avoid SSR issues with the Mappls SDK
 const MapComponent = dynamic(() => import("@/components/MapComponent"), {
@@ -31,6 +38,33 @@ export default function UserDashboardPage() {
   const [isSearched, setIsSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [routes, setRoutes] = useState<RouteData[]>([]);
+
+  // Place search state for source
+  const [sourceSuggestions, setSourceSuggestions] = useState<NominatimResult[]>([]);
+  const [sourceLoading, setSourceLoading] = useState(false);
+  const sourceDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Place search state for destination  
+  const [destSuggestions, setDestSuggestions] = useState<NominatimResult[]>([]);
+  const [destLoading, setDestLoading] = useState(false);
+  const destDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const searchPlace = useCallback((q: string, setSuggestions: (r: NominatimResult[]) => void, setLoading: (b: boolean) => void, debounceRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!q.trim()) { setSuggestions([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=in&limit=6&addressdetails=0`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const data: NominatimResult[] = await res.json();
+        setSuggestions(data);
+      } catch { setSuggestions([]); }
+      finally { setLoading(false); }
+    }, 400);
+  }, []);
 
   const recommendedRoute = routes.find((r) => r.isRecommended) ?? routes[0] ?? null;
 
@@ -86,26 +120,84 @@ export default function UserDashboardPage() {
                 <form onSubmit={handleCheckRoute} className="space-y-4">
                   <div>
                     <label className={labelClass}>Source location</label>
-                    <input
-                      type="text"
-                      value={source}
-                      onChange={(e) => setSource(e.target.value)}
-                      placeholder="e.g. Guwahati"
-                      className={inputClass}
-                      required
-                    />
+                    <div className="relative">
+                      <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                        {sourceLoading
+                          ? <svg className="h-4 w-4 animate-spin text-subtle" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                          : <Icon name="mapPin" size={16} className="text-subtle" />}
+                      </div>
+                      <input
+                        type="text"
+                        value={source}
+                        onChange={(e) => { setSource(e.target.value); searchPlace(e.target.value, setSourceSuggestions, setSourceLoading, sourceDebounce); }}
+                        placeholder="Search source — e.g. Guwahati, Assam"
+                        className={`${inputClass} pl-9`}
+                        autoComplete="off"
+                        required
+                      />
+                      {sourceSuggestions.length > 0 && (
+                        <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
+                          {sourceSuggestions.map((r) => (
+                            <li key={r.place_id}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Extract short name (first part before comma)
+                                  const shortName = r.display_name.split(',')[0].trim();
+                                  setSource(shortName);
+                                  setSourceSuggestions([]);
+                                }}
+                                className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash"
+                              >
+                                <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-primary" />
+                                <span className="line-clamp-2">{r.display_name}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
 
                   <div>
                     <label className={labelClass}>Destination location</label>
-                    <input
-                      type="text"
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      placeholder="e.g. Tawang"
-                      className={inputClass}
-                      required
-                    />
+                    <div className="relative">
+                      <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                        {destLoading
+                          ? <svg className="h-4 w-4 animate-spin text-subtle" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                          : <Icon name="mapPin" size={16} className="text-subtle" />}
+                      </div>
+                      <input
+                        type="text"
+                        value={destination}
+                        onChange={(e) => { setDestination(e.target.value); searchPlace(e.target.value, setDestSuggestions, setDestLoading, destDebounce); }}
+                        placeholder="Search destination — e.g. Tawang, Arunachal Pradesh"
+                        className={`${inputClass} pl-9`}
+                        autoComplete="off"
+                        required
+                      />
+                      {destSuggestions.length > 0 && (
+                        <ul className="absolute z-50 mt-1 w-full rounded-md border border-line bg-surface shadow-md max-h-48 overflow-y-auto">
+                          {destSuggestions.map((r) => (
+                            <li key={r.place_id}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Extract short name (first part before comma)
+                                  const shortName = r.display_name.split(',')[0].trim();
+                                  setDestination(shortName);
+                                  setDestSuggestions([]);
+                                }}
+                                className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-wash"
+                              >
+                                <Icon name="mapPin" size={14} className="mt-0.5 shrink-0 text-primary" />
+                                <span className="line-clamp-2">{r.display_name}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
 
                   <button

@@ -96,6 +96,52 @@ export default function DriverMissionPage() {
     return () => { active = false; };
   }, []);
 
+  // ── 10-second GPS location ping ──────────────────────────────────────
+  useEffect(() => {
+    // Only ping when we have an active mission and truck number
+    const activeMission = missions.find((m) => m.status === "IN_PROGRESS" || m.status === "PENDING");
+    if (!truckNo || !activeMission) return;
+
+    let watchId: number | null = null;
+    let latestCoords: { lat: number; lng: number } | null = null;
+
+    // Watch GPS position
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          latestCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        },
+        () => { /* ignore errors silently */ },
+        { enableHighAccuracy: true, maximumAge: 5000 }
+      );
+    }
+
+    // Ping every 10 seconds
+    const interval = setInterval(async () => {
+      if (!latestCoords) return;
+      try {
+        await fetch(`/api/truck/${truckNo}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            missionId: activeMission.missionId,
+            location: {
+              type: "Point",
+              coordinates: [latestCoords.lng, latestCoords.lat],
+            },
+          }),
+        });
+      } catch {
+        // Non-fatal — continue pinging
+      }
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [truckNo, missions]);
+
   const primary =
     missions.find((m) => m.status === "IN_PROGRESS") ?? missions[0] ?? null;
   const others = primary ? missions.filter((m) => m !== primary) : [];
