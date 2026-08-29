@@ -439,7 +439,7 @@ export default function MapComponent({
       overlaysRef.current.push(marker);
     });
 
-    // 2. Sort routes so blocked/high risk are drawn on the bottom, and recommended safe route is drawn on top
+<    // 2. Sort routes so blocked/high risk are drawn on the bottom, and recommended safe route is drawn on top
     const sortedRoutesToDraw = [...routeList].sort((a, b) => b.riskScore - a.riskScore);
 
     sortedRoutesToDraw.forEach((route) => {
@@ -489,6 +489,7 @@ export default function MapComponent({
       });
       overlaysRef.current.push(destMarker);
     }
+
 
     if (allPoints.length && mapRef.current.fitBounds) {
       mapRef.current.fitBounds(allPoints, {

@@ -217,6 +217,13 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link
+                    href="/government"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-surface px-4 py-2 text-[13px] font-semibold text-navy transition-colors hover:border-primary hover:text-primary"
+                  >
+                    <Icon name="landmark" size={14} />
+                    Government portal
+                  </Link>
+                  <Link
                     href="/login"
                     className="inline-flex items-center rounded-md border border-line-strong bg-surface px-4 py-2 text-[13px] font-semibold text-navy transition-colors hover:border-primary hover:text-primary"
                   >
@@ -284,20 +291,30 @@ export default function Navbar() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="rounded-md border border-line-strong py-2.5 text-center text-sm font-semibold text-navy"
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      href="/signup"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="rounded-md bg-primary py-2.5 text-center text-sm font-semibold text-white"
+                    >
+                      Register
+                    </Link>
+                  </div>
                   <Link
-                    href="/login"
+                    href="/government"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-md border border-line-strong py-2.5 text-center text-sm font-semibold text-navy"
+                    className="flex items-center justify-center gap-1.5 rounded-md border border-line-strong bg-surface py-2.5 text-center text-sm font-semibold text-navy"
                   >
-                    Sign in
-                  </Link>
-                  <Link
-                    href="/signup"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-md bg-primary py-2.5 text-center text-sm font-semibold text-white"
-                  >
-                    Register
+                    <Icon name="landmark" size={15} />
+                    Government portal
                   </Link>
                 </div>
               )}
