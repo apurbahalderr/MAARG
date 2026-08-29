@@ -431,7 +431,7 @@ export default function MapComponent({
       const marker = new window.mappls.Marker({
         map: mapRef.current,
         position: { lat, lng },
-        html: `<div style="background: white; padding: 4px 8px; border-radius: 12px; border: 2px solid #ef4444; font-size: 12px; font-weight: bold; color: #ef4444; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transform: translate(-50%, -150%);">
+        html: `<div class="maarg-marker-scale" style="background: white; padding: 4px 8px; border-radius: 12px; border: 2px solid #ef4444; font-size: 12px; font-weight: bold; color: #ef4444; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transform: translate(-50%, -150%) scale(var(--maarg-scale,1));transform-origin:bottom center;will-change:transform">
                  ⚠️ ${inc.type || inc.incidentId || 'Incident'}
                </div>`,
         popupHtml: `<div style="font-size:13px;padding:6px 10px;font-family:inherit"><strong>⚠️ ${inc.type || 'Incident'}</strong><br/>Severity: ${inc.severity || '—'}<br/>Impact Radius: 1.0 km<br/>Status: ${inc.status || '—'}</div>`,
@@ -470,7 +470,7 @@ export default function MapComponent({
       const origMarker = new window.mappls.Marker({
         map: mapRef.current!,
         position: { lat: originCoord[1], lng: originCoord[0] },
-        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
+        html: `<div class="maarg-marker-scale" style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%) scale(var(--maarg-scale,1));transform-origin:bottom center;will-change:transform">
           <div style="font-size:32px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));line-height:1">${emoji}</div>
           <div style="margin-top:2px;background:#0f2747;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2)">You are here</div>
         </div>`,
@@ -481,7 +481,7 @@ export default function MapComponent({
       const destMarker = new window.mappls.Marker({
         map: mapRef.current!,
         position: { lat: destCoord[1], lng: destCoord[0] },
-        html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
+        html: `<div class="maarg-marker-scale" style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%) scale(var(--maarg-scale,1));transform-origin:bottom center;will-change:transform">
           <div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));line-height:1">📍</div>
           <div style="margin-top:2px;background:#d97706;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2)">Destination</div>
         </div>`,
@@ -529,6 +529,23 @@ export default function MapComponent({
         fetchRoutes(originProp, destinationProp);
       }
 
+      // ── Keep HTML markers in sync with map zoom (so emoji scales like the route) ─
+      const syncMarkerScale = () => {
+        try {
+          const z = (mapInstance as any).getZoom?.() ?? 10;
+          const s = Math.max(0.6, Math.min(1.9, z / 10));
+          if (mapContainerRef.current) {
+            mapContainerRef.current.style.setProperty("--maarg-scale", String(s));
+          }
+        } catch {}
+      };
+      // Mappls exposes zoom events on the map instance
+      try {
+        (mapInstance as any).on?.("zoom", syncMarkerScale);
+        (mapInstance as any).on?.("zoomend", syncMarkerScale);
+      } catch {}
+      syncMarkerScale();
+
       // ── Show live location blue dot (like Google Maps) ────────────────────
       if (typeof navigator !== "undefined" && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -537,7 +554,7 @@ export default function MapComponent({
             new window.mappls.Marker({
               map: mapRef.current,
               position: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-              html: `<div style="display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)">
+              html: `<div class="maarg-marker-scale" style="display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%) scale(var(--maarg-scale,1));transform-origin:center;will-change:transform">
                 <div style="width:18px;height:18px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(66,133,244,0.3),0 2px 6px rgba(0,0,0,0.3);position:relative">
                   <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(66,133,244,0.15);animation:bluePulse 2s ease-out infinite"></div>
                 </div>
@@ -766,7 +783,7 @@ export default function MapComponent({
                   }}
                 />
                 <span style={{ fontSize: 12, color: "#111827" }}>
-                  Route {i + 1} — {r.riskScore}% risk{" "}
+                  Route {i + 1} {r.riskScore > 50 ? `— ${r.riskScore}% risk` : ""}{" "}
                   {r.isRecommended ? "⭐" : ""}
                 </span>
               </button>

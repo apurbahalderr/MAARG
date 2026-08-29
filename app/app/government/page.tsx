@@ -617,7 +617,7 @@ export default function GovernmentPage() {
                                     <span className="inline-block h-2 w-2 rounded-full" style={{ background: r.color || (r.risk==="LOW"?"#16a34a":r.risk==="MEDIUM"?"#d97706":"#dc2626")}} />
                                     Route {idx + 1} {r.isRecommended ? <span className="rounded bg-safe-bg px-1.5 py-0.5 text-[10px] font-bold text-safe">RECOMMENDED</span> : null}
                                   </p>
-                                  <p className="text-[12px] text-muted">{r.distanceKm} km · {r.eta} · <span className={r.risk==="LOW"?"text-safe":r.risk==="MEDIUM"?"text-warning":"text-danger"}>{r.riskScore}% {r.risk}</span></p>
+                                  <p className="text-[12px] text-muted">{r.distanceKm} km · {r.eta} {r.riskScore > 50 ? <>· <span className={r.risk==="LOW"?"text-safe":r.risk==="MEDIUM"?"text-warning":"text-danger"}>{r.riskScore}% {r.risk}</span></> : null}</p>
                                   {r.riskReasons?.[0] && <p className="mt-1 line-clamp-1 text-[11px] text-subtle">{r.riskReasons[0]}</p>}
                                 </div>
                                 <button
