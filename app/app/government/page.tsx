@@ -622,7 +622,9 @@ export default function GovernmentPage() {
                                 </div>
                                 <button
                                   type="button"
+                                  disabled={selectingIdx !== null || r.riskScore === 100}
                                   onClick={() => {
+                                    if (selectingIdx !== null || r.riskScore === 100) return;
                                     // Validate mission form completeness
                                     if (!truckNo.trim() || !cargoQuantity.trim() || !origin.trim() || !destination.trim() || !targetArrival) {
                                       setSelectError("Fill truck, cargo, origin, destination and target arrival before selecting a route.");
@@ -636,12 +638,14 @@ export default function GovernmentPage() {
                                     setSelectedRouteIdx(idx);
                                   }}
                                   className={`shrink-0 rounded-md px-4 py-2 text-xs font-bold transition-all ${
-                                    selectedRouteIdx === idx
-                                      ? "bg-green-100 border border-[#166534] text-[#166534]"
-                                      : "bg-india text-white hover:bg-india-600"
+                                    r.riskScore === 100
+                                      ? "bg-danger text-white cursor-not-allowed opacity-60"
+                                      : selectedRouteIdx === idx
+                                        ? "bg-green-100 border border-[#166534] text-[#166534]"
+                                        : "bg-india text-white hover:bg-india-600"
                                   }`}
                                 >
-                                  {selectedRouteIdx === idx ? "Selected" : "Select"}
+                                  {r.riskScore === 100 ? "UNSAFE" : selectedRouteIdx === idx ? "Selected" : selectingIdx===idx ? "Saving…" : "Select"}
                                 </button>
                               </div>
                             ))}

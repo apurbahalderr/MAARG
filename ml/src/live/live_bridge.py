@@ -19,11 +19,8 @@ def trigger_backend_rerouting(mission_id: str, latitude: float, longitude: float
     print(f"Payload: {payload}")
     
     try:
-        # In a real environment, this makes a POST request to Anshu's Backend API.
-        # response = requests.post(f"{BACKEND_REROUTE_API}/{mission_id}", json=payload)
-        # return response.json()
-        print("Live Bridge simulation: successfully pushed incident coordinate to Backend.")
-        return {"status": "success", "backend_action": payload["action"]}
+        response = requests.post(f"{BACKEND_REROUTE_API}/{mission_id}", json=payload, timeout=10)
+        return response.json()
     except Exception as e:
         print(f"Failed to reach backend: {e}")
         return {"status": "error", "error": str(e)}
